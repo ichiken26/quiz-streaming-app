@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        "runtime": {
+          ".read": true,
+          ".write": true
+        },
+        "answers": {
+          "$questionId": {
+            ".read": true,
+            "$participantId": {
+              ".write": "$participantId === newData.child('participantId').val()",
+              ".validate": "newData.hasChildren(['participantId', 'nickname', 'choiceId', 'answeredAt']) && newData.child('nickname').isString() && newData.child('nickname').val().length > 0 && newData.child('nickname').val().length <= 30"
+            }
+          }
+        }
+      }
+    }
+  }
+}

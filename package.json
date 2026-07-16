@@ -1,0 +1,32 @@
+{
+  "name": "quiz-streaming-app",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "test:scoring": "node --experimental-strip-types --test tests/quizScoring.test.ts",
+    "deploy": "npm run generate && wrangler deploy",
+    "deploy:preview": "npm run generate && wrangler versions upload --preview-alias prompt2",
+    "deploy:dry-run": "npm run generate && wrangler deploy --dry-run",
+    "typecheck": "nuxt typecheck && tsc -p tsconfig.worker.json --noEmit",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@google/design.md": "^0.3.0",
+    "firebase": "^12.16.0",
+    "nuxt": "^4.4.8",
+    "qrcode": "^1.5.4",
+    "vue": "^3.5.39",
+    "vue-router": "^5.1.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260716.1",
+    "@types/qrcode": "^1.5.6",
+    "typescript": "5.9.3",
+    "vue-tsc": "^3.3.7",
+    "wrangler": "^4.111.0"
+  }
+}

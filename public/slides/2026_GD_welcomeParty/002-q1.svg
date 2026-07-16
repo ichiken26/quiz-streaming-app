@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Question 1</title>
+  <desc id="desc">Question slide placeholder</desc>
+  <rect width="1600" height="900" fill="#101319"/>
+  <rect x="96" y="88" width="246" height="70" rx="8" fill="#62d9ff"/>
+  <text x="219" y="138" text-anchor="middle" fill="#071116" font-family="Arial, sans-serif" font-size="34" font-weight="700">QUESTION 01</text>
+  <text x="800" y="420" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="88" font-weight="700">サンプル問題</text>
+  <text x="800" y="520" text-anchor="middle" fill="#aab3c2" font-family="Arial, sans-serif" font-size="42">正しいものを1つ選んでください</text>
+  <rect x="96" y="760" width="1408" height="8" fill="#e7ff5b"/>
+</svg>

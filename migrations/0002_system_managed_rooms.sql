@@ -1,0 +1,19 @@
+ALTER TABLE rooms ADD COLUMN system_managed INTEGER NOT NULL DEFAULT 0;
+
+INSERT OR IGNORE INTO rooms (
+  room_id,
+  owner_email,
+  room_name,
+  config_json,
+  system_managed
+) VALUES (
+  '2026_GD_welcomeParty',
+  '62ichiken@gmail.com',
+  '2026 GD Welcome Party',
+  '{"roomId":"2026_GD_welcomeParty","title":"2026 GD Welcome Party","description":"Welcome party quiz event","initialSlideIndex":0,"slides":[{"id":"opening","type":"slide","title":"Opening","imageUrl":"/slides/2026_GD_welcomeParty/001-opening.svg"},{"id":"q1","type":"question","title":"Question 1","imageUrl":"/slides/2026_GD_welcomeParty/002-q1.svg","questionId":"q1"},{"id":"q1-answer","type":"answer","title":"Question 1 Answer","imageUrl":"/slides/2026_GD_welcomeParty/003-q1-answer.svg","questionId":"q1"}],"questions":[{"id":"q1","type":"single","text":"第1問：サンプル問題です。正しいものを1つ選んでください。","choices":[{"id":"a","label":"A","text":"選択肢A"},{"id":"b","label":"B","text":"選択肢B"},{"id":"c","label":"C","text":"選択肢C"},{"id":"d","label":"D","text":"選択肢D"}],"correctChoiceId":"b","timeLimitSeconds":20}]}',
+  1
+);
+
+UPDATE rooms
+SET system_managed = 1
+WHERE room_id = '2026_GD_welcomeParty';

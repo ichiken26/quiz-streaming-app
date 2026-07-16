@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Question 1 Answer</title>
+  <desc id="desc">Answer slide placeholder</desc>
+  <rect width="1600" height="900" fill="#101319"/>
+  <text x="800" y="220" text-anchor="middle" fill="#aab3c2" font-family="Arial, sans-serif" font-size="40">QUESTION 01</text>
+  <text x="800" y="390" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="66" font-weight="700">正解は</text>
+  <circle cx="800" cy="590" r="135" fill="#e7ff5b"/>
+  <text x="800" y="640" text-anchor="middle" fill="#111318" font-family="Arial, sans-serif" font-size="150" font-weight="800">B</text>
+</svg>
