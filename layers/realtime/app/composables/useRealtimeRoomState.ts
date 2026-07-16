@@ -15,6 +15,8 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
     mode: 'slide',
     currentQuestionId: undefined,
     questionOpen: false,
+    questionClosed: false,
+    hasVisitedFinalSlide: false,
     questionStartedAt: undefined,
     winnerReveal: undefined,
   })
@@ -32,6 +34,8 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
     state.mode = value.mode
     state.currentQuestionId = value.currentQuestionId
     state.questionOpen = value.questionOpen
+    state.questionClosed = Boolean(value.questionClosed)
+    state.hasVisitedFinalSlide = Boolean(value.hasVisitedFinalSlide)
     state.questionStartedAt = value.questionStartedAt
     state.winnerReveal = value.winnerReveal
   }
@@ -78,6 +82,8 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
       mode: nextState.mode,
       currentQuestionId: nextState.currentQuestionId ?? null,
       questionOpen: nextState.questionOpen,
+      questionClosed: nextState.questionClosed,
+      hasVisitedFinalSlide: nextState.hasVisitedFinalSlide,
       questionStartedAt: options.useServerQuestionStart
         ? serverTimestamp()
         : nextState.questionStartedAt ?? null,
@@ -97,6 +103,8 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
       mode: initialState.mode,
       currentQuestionId: initialState.currentQuestionId ?? null,
       questionOpen: false,
+      questionClosed: false,
+      hasVisitedFinalSlide: false,
       questionStartedAt: null,
       winnerReveal: null,
     }

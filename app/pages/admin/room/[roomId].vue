@@ -40,6 +40,11 @@ const currentSlideHeading = computed(() => currentQuestionNumber.value
   ? `Q${currentQuestionNumber.value}`
   : controller.currentSlide.value?.title)
 const resettingSession = ref(false)
+const slideNavigation = useAdminSlideNavigation(
+  computed(() => controller.currentQuestion.value),
+  realtime.state,
+  controller,
+)
 
 async function revealWinner() {
   if (!isFinalSlide.value || !leaderboard.winners.value.length) return
@@ -68,6 +73,8 @@ async function resetRoomSession() {
       mode: 'slide',
       currentQuestionId: room.value.slides[room.value.initialSlideIndex]?.questionId,
       questionOpen: false,
+      questionClosed: false,
+      hasVisitedFinalSlide: false,
     })
   }
   finally {
@@ -84,6 +91,8 @@ watch(
       mode: 'slide',
       currentQuestionId: config.slides[config.initialSlideIndex]?.questionId,
       questionOpen: false,
+      questionClosed: false,
+      hasVisitedFinalSlide: false,
       winnerReveal: undefined,
     }
     try {
@@ -104,6 +113,10 @@ useHead({
 <template>
   <main class="admin-page">
     <WinnerRevealModal :reveal="realtime.state.winnerReveal" admin @close="closeWinner" />
+    <QuestionCloseWarningModal
+      :open="slideNavigation.warningOpen.value"
+      @close="slideNavigation.closeWarning"
+    />
     <div v-if="status === 'pending' || status === 'idle'" class="page-message" role="status">
       <span class="loader" aria-hidden="true" />
       部屋情報を読み込んでいます
@@ -145,11 +158,12 @@ useHead({
             :has-winners="Boolean(leaderboard.winners.value.length)"
             :remaining-seconds="timer.remainingSeconds.value"
             :resetting="resettingSession"
+            :can-jump-to-last="slideNavigation.canJumpToLast.value"
             :disabled="realtime.connectionStatus.value !== 'connected'"
-            @previous="controller.previous"
-            @next="controller.next"
-            @first="controller.first"
-            @last="controller.last"
+            @previous="slideNavigation.previous"
+            @next="slideNavigation.next"
+            @first="slideNavigation.first"
+            @last="slideNavigation.last"
             @open-question="controller.openQuestion"
             @close-question="controller.closeQuestion"
             @show-answer="controller.showAnswer"

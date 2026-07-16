@@ -43,6 +43,8 @@ export type RoomRuntimeState = {
   mode: RoomMode
   currentQuestionId?: string
   questionOpen: boolean
+  questionClosed: boolean
+  hasVisitedFinalSlide: boolean
   questionStartedAt?: number
   winnerReveal?: WinnerReveal
 }

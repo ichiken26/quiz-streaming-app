@@ -1,4 +1,5 @@
 import type { RoomConfig, RoomMode, RoomRuntimeState } from '#shared/types/quiz'
+import { recordFinalSlideVisit } from '#shared/utils/quizNavigation'
 
 type PublishState = (
   state: RoomRuntimeState,
@@ -33,9 +34,17 @@ export function useRoomRuntimeState(
     const slides = room.value?.slides
     if (!slides?.length) return
 
-    runtimeState.currentSlideIndex = Math.min(Math.max(index, 0), slides.length - 1)
+    const targetIndex = Math.min(Math.max(index, 0), slides.length - 1)
+    runtimeState.hasVisitedFinalSlide = recordFinalSlideVisit(
+      runtimeState.hasVisitedFinalSlide,
+      runtimeState.currentSlideIndex,
+      targetIndex,
+      slides.length,
+    )
+    runtimeState.currentSlideIndex = targetIndex
     runtimeState.mode = 'slide'
     runtimeState.questionOpen = false
+    runtimeState.questionClosed = false
     runtimeState.currentQuestionId = slides[runtimeState.currentSlideIndex]?.questionId
     runtimeState.questionStartedAt = undefined
     runtimeState.winnerReveal = undefined
@@ -45,7 +54,6 @@ export function useRoomRuntimeState(
   function setMode(mode: RoomMode, questionOpen = false) {
     runtimeState.mode = mode
     runtimeState.questionOpen = questionOpen
-    if (!questionOpen) runtimeState.questionStartedAt = undefined
     void commit()
   }
 
@@ -69,11 +77,13 @@ export function useRoomRuntimeState(
     if (!currentQuestion.value) return
     runtimeState.mode = 'question'
     runtimeState.questionOpen = true
+    runtimeState.questionClosed = false
     runtimeState.questionStartedAt = Date.now()
     void commit({ useServerQuestionStart: true })
   }
 
   function closeQuestion() {
+    runtimeState.questionClosed = true
     setMode('closed')
   }
 

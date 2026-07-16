@@ -8,6 +8,7 @@ defineProps<{
   isFinalSlide: boolean
   hasWinners: boolean
   remainingSeconds: number
+  canJumpToLast: boolean
   resetting?: boolean
   disabled?: boolean
 }>()
@@ -48,11 +49,17 @@ defineEmits<{
 
     <div class="control-group">
       <p>スライド</p>
-      <div class="button-row">
-        <button class="button button--secondary" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('first')">最初へ</button>
-        <button class="button button--secondary" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('previous')">前へ</button>
-        <button class="button button--secondary" type="button" :disabled="disabled || state.currentSlideIndex >= total - 1" @click="$emit('next')">次へ</button>
-        <button class="button button--secondary" type="button" :disabled="disabled || state.currentSlideIndex >= total - 1" @click="$emit('last')">最後へ</button>
+      <div class="button-row slide-navigation">
+        <button class="button button--slide-first" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('first')">最初へ</button>
+        <button
+          class="button button--slide-last"
+          type="button"
+          :disabled="disabled || !canJumpToLast || state.currentSlideIndex >= total - 1"
+          :title="!canJumpToLast ? '最終スライドを一度表示すると使用できます' : undefined"
+          @click="$emit('last')"
+        >最後へ</button>
+        <button class="button button--slide-previous" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('previous')">←前へ</button>
+        <button class="button button--slide-next" type="button" :disabled="disabled || state.currentSlideIndex >= total - 1" @click="$emit('next')">→次へ</button>
       </div>
     </div>
 

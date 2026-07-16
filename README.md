@@ -48,6 +48,26 @@ npm run preview
 Cloudflare Workers Static Assetsとしてデプロイします。初回のみ`npx wrangler login`で
 Cloudflareへログインし、Firebaseの公開設定値を`.env`へ設定してから実行してください。
 
+### Workers Builds (Git連携)
+
+Dashboardの Build command は `npm run build` のままで問題ありません。
+このリポジトリの `build` は静的生成 (`nuxt generate`) を実行し、`.output/public` を用意します。
+その後 Deploy command の `npx wrangler deploy` が Worker と Static Assets を公開します。
+
+Build Variables には Firebase 公開設定を入れてください（ビルド時にフロントへ埋め込まれます）。
+
+```text
+NUXT_PUBLIC_FIREBASE_API_KEY
+NUXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+NUXT_PUBLIC_FIREBASE_DATABASE_URL
+NUXT_PUBLIC_FIREBASE_PROJECT_ID
+NUXT_PUBLIC_FIREBASE_APP_ID
+```
+
+Node は `.nvmrc` で 22 を指定しています。
+
+### 手動デプロイ
+
 ```bash
 npm run typecheck
 npm run deploy

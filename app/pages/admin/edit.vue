@@ -20,6 +20,7 @@ const saveMessage = ref('')
 const saveError = ref('')
 const roomLoadError = ref('')
 const selected = ref(new Set<string>())
+const activeChoiceIds = ref(new Set<string>())
 const changes = ref<RoomChange[]>([])
 const draggedIndex = ref<number>()
 const fileInput = ref<HTMLInputElement>()
@@ -124,15 +125,38 @@ function addChoice(question: Question) {
   markChanged('quiz:choices', question.id)
 }
 
-function cleanupChoices(question: Question) {
+function activateChoice(choiceId: string) {
+  const next = new Set(activeChoiceIds.value)
+  next.add(choiceId)
+  activeChoiceIds.value = next
+}
+
+function deactivateChoice(choiceId: string) {
+  const next = new Set(activeChoiceIds.value)
+  next.delete(choiceId)
+  activeChoiceIds.value = next
+}
+
+function removeChoice(question: Question, choiceId: string) {
+  if (question.choices.length <= 2) return
+  const choiceIndex = question.choices.findIndex(choice => choice.id === choiceId)
+  if (choiceIndex < 0) return
+
+  question.choices.splice(choiceIndex, 1)
   question.choices = question.choices
-    .filter((choice, index) => index < 2 || choice.text.trim())
     .slice(0, 6)
     .map((choice, index) => ({ ...choice, label: labels(index) }))
   const available = new Set(question.choices.map(choice => choice.id))
   question.correctChoiceIds = getCorrectChoiceIds(question).filter(id => available.has(id))
   question.correctChoiceId = question.type === 'single' ? question.correctChoiceIds[0] : undefined
+  deactivateChoice(choiceId)
   markChanged('quiz:choices', question.id)
+}
+
+function removeEmptyChoiceOnBlur(question: Question, choice: Choice) {
+  if (!activeChoiceIds.value.has(choice.id)) return
+  deactivateChoice(choice.id)
+  if (!choice.text.trim()) removeChoice(question, choice.id)
 }
 
 function setQuestionType(question: Question) {
@@ -541,9 +565,9 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
                   @input="markChanged('quiz:question', questionFor(slide)!.id)"
                 />
               </label>
-              <fieldset class="choice-editor" @focusout="cleanupChoices(questionFor(slide)!)">
+              <fieldset class="choice-editor">
                 <legend>選択肢と解答 <b>必須</b></legend>
-                <label v-for="choice in questionFor(slide)!.choices" :key="choice.id">
+                <div v-for="choice in questionFor(slide)!.choices" :key="choice.id" class="choice-editor__row">
                   <input
                     :type="questionFor(slide)!.type === 'single' ? 'radio' : 'checkbox'"
                     :name="`answer-${questionFor(slide)!.id}`"
@@ -552,8 +576,27 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
                     @change="setCorrect(questionFor(slide)!, choice.id, ($event.target as HTMLInputElement).checked)"
                   >
                   <span>{{ choice.label }}</span>
-                  <input v-model="choice.text" :placeholder="`選択肢 ${choice.label}`" @input="markChanged('quiz:choices', questionFor(slide)!.id)">
-                </label>
+                  <input
+                    v-model="choice.text"
+                    :placeholder="`選択肢 ${choice.label}`"
+                    :aria-label="`選択肢 ${choice.label}`"
+                    @focus="activateChoice(choice.id)"
+                    @blur="removeEmptyChoiceOnBlur(questionFor(slide)!, choice)"
+                    @input="markChanged('quiz:choices', questionFor(slide)!.id)"
+                  >
+                  <button
+                    class="choice-editor__delete"
+                    type="button"
+                    :disabled="questionFor(slide)!.choices.length <= 2"
+                    :aria-label="`選択肢 ${choice.label}を削除`"
+                    :title="questionFor(slide)!.choices.length <= 2 ? '選択肢は2件以上必要です' : `選択肢 ${choice.label}を削除`"
+                    @click="removeChoice(questionFor(slide)!, choice.id)"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5" />
+                    </svg>
+                  </button>
+                </div>
                 <button
                   class="button button--secondary"
                   type="button"

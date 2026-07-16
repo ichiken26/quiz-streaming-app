@@ -3,10 +3,11 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
+    "build": "nuxt generate",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:scoring": "node --experimental-strip-types --test tests/quizScoring.test.ts",
     "deploy": "npm run generate && wrangler deploy",
     "deploy:preview": "npm run generate && wrangler versions upload --preview-alias prompt2",
