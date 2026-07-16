@@ -4,6 +4,12 @@
   "main": "./worker/index.ts",
   "compatibility_date": "2026-07-16",
   "preview_urls": true,
+  "routes": [
+    {
+      "pattern": "quiz-streaming-app.kokage-studio.com",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./.output/public",
     "binding": "ASSETS",
