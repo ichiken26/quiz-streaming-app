@@ -1,5 +1,9 @@
 import type { Question, RoomRuntimeState } from '#shared/types/quiz'
 
+function isValidStartedAt(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
 export function useSyncedQuestionTimer(
   question: MaybeRefOrGetter<Question | undefined>,
   runtimeState: RoomRuntimeState,
@@ -15,8 +19,11 @@ export function useSyncedQuestionTimer(
       () => runtimeState.questionOpen,
     ],
     ([questionId, startedAt, questionOpen]) => {
-      if (questionId && startedAt && questionOpen) timer.start(startedAt)
-      else timer.stop()
+      if (questionId && questionOpen && isValidStartedAt(startedAt)) {
+        timer.start(startedAt)
+        return
+      }
+      timer.stop()
     },
     { immediate: true },
   )

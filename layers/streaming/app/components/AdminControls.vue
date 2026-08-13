@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { RoomRuntimeState } from '#shared/types/quiz'
+import { formatWinnerRankRange } from '#shared/utils/winnerRanking'
 
 defineProps<{
   state: RoomRuntimeState
@@ -7,8 +8,12 @@ defineProps<{
   hasQuestion: boolean
   isFinalSlide: boolean
   hasWinners: boolean
+  winnerLastRank?: number
   remainingSeconds: number
-  canJumpToLast: boolean
+  canGoFirst: boolean
+  canGoPrevious: boolean
+  canGoNext: boolean
+  canGoLast: boolean
   resetting?: boolean
   disabled?: boolean
 }>()
@@ -50,39 +55,101 @@ defineEmits<{
     <div class="control-group">
       <p>スライド</p>
       <div class="button-row slide-navigation">
-        <button class="button button--slide-first" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('first')">最初へ</button>
+        <button
+          class="button button--slide-first"
+          type="button"
+          :disabled="disabled || !canGoFirst"
+          @click="$emit('first')"
+        >
+          最初へ
+        </button>
         <button
           class="button button--slide-last"
           type="button"
-          :disabled="disabled || !canJumpToLast || state.currentSlideIndex >= total - 1"
-          :title="!canJumpToLast ? '最終スライドを一度表示すると使用できます' : undefined"
+          :disabled="disabled || !canGoLast"
+          :title="!canGoLast && !disabled ? '最終スライドを一度表示すると使用できます' : undefined"
           @click="$emit('last')"
-        >最後へ</button>
-        <button class="button button--slide-previous" type="button" :disabled="disabled || state.currentSlideIndex === 0" @click="$emit('previous')">←前へ</button>
-        <button class="button button--slide-next" type="button" :disabled="disabled || state.currentSlideIndex >= total - 1" @click="$emit('next')">→次へ</button>
+        >
+          最後へ
+        </button>
+        <button
+          class="button button--slide-previous"
+          type="button"
+          :disabled="disabled || !canGoPrevious"
+          @click="$emit('previous')"
+        >
+          ←前へ
+        </button>
+        <button
+          class="button button--slide-next"
+          type="button"
+          :disabled="disabled || !canGoNext"
+          @click="$emit('next')"
+        >
+          →次へ
+        </button>
       </div>
     </div>
 
     <div class="control-group">
       <p>進行</p>
       <div class="button-row">
-        <button class="button button--primary" type="button" :disabled="disabled || !hasQuestion" @click="$emit('openQuestion')">回答受付開始</button>
-        <button class="button button--warning" type="button" :disabled="disabled || state.mode !== 'question'" @click="$emit('closeQuestion')">回答締切</button>
-        <button class="button button--secondary" type="button" :disabled="disabled || !hasQuestion" @click="$emit('showAnswer')">正解表示</button>
-        <button class="button button--secondary" type="button" :disabled="disabled || !hasQuestion" @click="$emit('showResults')">集計表示</button>
+        <button
+          class="button button--primary"
+          type="button"
+          :disabled="disabled || !hasQuestion || state.questionOpen"
+          @click="$emit('openQuestion')"
+        >
+          回答受付開始
+        </button>
+        <button
+          class="button button--warning"
+          type="button"
+          :disabled="disabled || state.mode !== 'question'"
+          @click="$emit('closeQuestion')"
+        >
+          回答締切
+        </button>
+        <button
+          class="button button--secondary"
+          type="button"
+          :disabled="disabled || !hasQuestion"
+          @click="$emit('showAnswer')"
+        >
+          正解表示
+        </button>
+        <button
+          class="button button--secondary"
+          type="button"
+          :disabled="disabled || !hasQuestion"
+          @click="$emit('showResults')"
+        >
+          集計表示
+        </button>
       </div>
     </div>
 
     <div v-if="isFinalSlide" class="control-group winner-control">
       <p>優勝者発表</p>
+      <p v-if="winnerLastRank" class="winner-rank-setting">
+        {{ formatWinnerRankRange(winnerLastRank) }}をWinnerとして発表
+      </p>
       <button
         v-if="!state.winnerReveal?.open"
         class="button button--go"
         type="button"
         :disabled="disabled || !hasWinners"
         @click="$emit('revealWinner')"
-      >GO</button>
-      <button v-else class="button button--warning" type="button" :disabled="disabled" @click="$emit('closeWinner')">
+      >
+        GO
+      </button>
+      <button
+        v-else
+        class="button button--warning"
+        type="button"
+        :disabled="disabled"
+        @click="$emit('closeWinner')"
+      >
         発表を終了
       </button>
     </div>
@@ -94,7 +161,9 @@ defineEmits<{
         type="button"
         :disabled="disabled || resetting"
         @click="$emit('resetSession')"
-      >{{ resetting ? 'リセット中…' : '回答状況・参加者セッションをリセット' }}</button>
+      >
+        {{ resetting ? 'リセット中…' : '回答状況・参加者セッションをリセット' }}
+      </button>
     </div>
   </section>
 </template>

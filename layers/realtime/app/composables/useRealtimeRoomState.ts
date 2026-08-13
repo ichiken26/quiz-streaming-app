@@ -28,6 +28,10 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
     return `rooms/${toValue(roomId)}/runtime`
   }
 
+  function normalizeQuestionStartedAt(value: unknown) {
+    return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+  }
+
   function applyRemoteState(value: RoomRuntimeState) {
     state.sessionId = value.sessionId
     state.currentSlideIndex = value.currentSlideIndex
@@ -36,7 +40,13 @@ export function useRealtimeRoomState(roomId: MaybeRefOrGetter<string>) {
     state.questionOpen = value.questionOpen
     state.questionClosed = Boolean(value.questionClosed)
     state.hasVisitedFinalSlide = Boolean(value.hasVisitedFinalSlide)
-    state.questionStartedAt = value.questionStartedAt
+    const remoteStartedAt = normalizeQuestionStartedAt(value.questionStartedAt)
+    if (remoteStartedAt !== undefined) {
+      state.questionStartedAt = remoteStartedAt
+    }
+    else if (!value.questionOpen) {
+      state.questionStartedAt = undefined
+    }
     state.winnerReveal = value.winnerReveal
   }
 

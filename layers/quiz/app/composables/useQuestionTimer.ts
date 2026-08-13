@@ -1,7 +1,7 @@
 export function useQuestionTimer(timeLimitSeconds: MaybeRefOrGetter<number>) {
   const remainingSeconds = ref(Math.max(0, toValue(timeLimitSeconds)))
   const isRunning = ref(false)
-  const isExpired = computed(() => remainingSeconds.value <= 0)
+  const isExpired = computed(() => isRunning.value && remainingSeconds.value <= 0)
 
   let intervalId: ReturnType<typeof setInterval> | undefined
   let deadline = 0
@@ -10,6 +10,12 @@ export function useQuestionTimer(timeLimitSeconds: MaybeRefOrGetter<number>) {
     if (intervalId) {
       clearInterval(intervalId)
       intervalId = undefined
+    }
+  }
+
+  function syncIdleRemaining() {
+    if (!isRunning.value) {
+      remainingSeconds.value = Math.max(0, toValue(timeLimitSeconds))
     }
   }
 
@@ -38,19 +44,26 @@ export function useQuestionTimer(timeLimitSeconds: MaybeRefOrGetter<number>) {
     deadline = startedAt + duration * 1000
     isRunning.value = true
     updateRemaining()
-    if (remainingSeconds.value === 0) return
+    if (remainingSeconds.value === 0) {
+      isRunning.value = false
+      return
+    }
     intervalId = setInterval(updateRemaining, 250)
   }
 
   function stop() {
+    if (deadline) updateRemaining()
     isRunning.value = false
     clearTimer()
+    syncIdleRemaining()
   }
 
   function reset() {
     stop()
     remainingSeconds.value = Math.max(0, toValue(timeLimitSeconds))
   }
+
+  watch(() => toValue(timeLimitSeconds), syncIdleRemaining)
 
   onScopeDispose(clearTimer)
 

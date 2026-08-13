@@ -1,10 +1,40 @@
 import type { RoomConfig, RoomMode, RoomRuntimeState } from '#shared/types/quiz'
-import { recordFinalSlideVisit } from '#shared/utils/quizNavigation'
+import {
+  canJumpToLastSlide,
+  canNavigateBackward,
+  canNavigateForward,
+  recordFinalSlideVisit,
+} from '#shared/utils/quizNavigation'
 
 type PublishState = (
   state: RoomRuntimeState,
   options?: { useServerQuestionStart?: boolean },
 ) => Promise<void>
+
+function navigationGuard(
+  room: RoomConfig | null | undefined,
+  runtimeState: RoomRuntimeState,
+  targetIndex: number,
+) {
+  const slides = room?.slides ?? []
+  const slide = slides[runtimeState.currentSlideIndex]
+  const hasQuestion = Boolean(
+    slide?.questionId
+    && room?.questions.some(question => question.id === slide.questionId),
+  )
+
+  return {
+    mode: runtimeState.mode,
+    hasQuestion,
+    questionOpen: runtimeState.questionOpen,
+    questionClosed: runtimeState.questionClosed,
+    atFirstSlide: runtimeState.currentSlideIndex <= 0,
+    atLastSlide: runtimeState.currentSlideIndex >= Math.max(0, slides.length - 1),
+    hasVisitedFinalSlide: runtimeState.hasVisitedFinalSlide,
+    targetIndex,
+    slidesLength: slides.length,
+  }
+}
 
 export function useRoomRuntimeState(
   room: Ref<RoomConfig | null | undefined>,
@@ -30,11 +60,25 @@ export function useRoomRuntimeState(
     }
   }
 
+  function canApplySlide(targetIndex: number) {
+    const context = navigationGuard(room.value, runtimeState, targetIndex)
+    if (targetIndex === runtimeState.currentSlideIndex) return false
+    if (targetIndex < runtimeState.currentSlideIndex) {
+      return canNavigateBackward(context)
+    }
+    if (targetIndex >= context.slidesLength - 1) {
+      return canJumpToLastSlide(context)
+    }
+    return canNavigateForward(context)
+  }
+
   function applySlide(index: number) {
     const slides = room.value?.slides
     if (!slides?.length) return
 
     const targetIndex = Math.min(Math.max(index, 0), slides.length - 1)
+    if (!canApplySlide(targetIndex)) return
+
     runtimeState.hasVisitedFinalSlide = recordFinalSlideVisit(
       runtimeState.hasVisitedFinalSlide,
       runtimeState.currentSlideIndex,
@@ -75,6 +119,7 @@ export function useRoomRuntimeState(
 
   function openQuestion() {
     if (!currentQuestion.value) return
+    runtimeState.currentQuestionId = currentQuestion.value.id
     runtimeState.mode = 'question'
     runtimeState.questionOpen = true
     runtimeState.questionClosed = false

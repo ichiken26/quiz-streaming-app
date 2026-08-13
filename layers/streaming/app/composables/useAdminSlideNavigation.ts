@@ -1,5 +1,9 @@
-import type { Question, RoomRuntimeState } from '#shared/types/quiz'
-import { shouldBlockSlideNavigation } from '#shared/utils/quizNavigation'
+import type { RoomRuntimeState } from '#shared/types/quiz'
+import {
+  canJumpToLastSlide,
+  canNavigateBackward,
+  canNavigateForward,
+} from '#shared/utils/quizNavigation'
 
 type SlideNavigationActions = {
   first: () => void
@@ -9,51 +13,51 @@ type SlideNavigationActions = {
 }
 
 export function useAdminSlideNavigation(
-  currentQuestion: MaybeRefOrGetter<Question | undefined>,
+  hasQuestion: MaybeRefOrGetter<boolean>,
   runtimeState: RoomRuntimeState,
+  totalSlides: MaybeRefOrGetter<number>,
   actions: SlideNavigationActions,
 ) {
-  const warningOpen = ref(false)
-  const canJumpToLast = computed(() => runtimeState.hasVisitedFinalSlide)
+  const guard = computed(() => ({
+    mode: runtimeState.mode,
+    hasQuestion: toValue(hasQuestion),
+    questionOpen: runtimeState.questionOpen,
+    questionClosed: runtimeState.questionClosed,
+    atFirstSlide: runtimeState.currentSlideIndex <= 0,
+    atLastSlide: runtimeState.currentSlideIndex >= Math.max(0, toValue(totalSlides) - 1),
+    hasVisitedFinalSlide: runtimeState.hasVisitedFinalSlide,
+  }))
 
-  function closeWarning() {
-    warningOpen.value = false
-  }
-
-  function navigate(action: () => void, forward = false) {
-    if (shouldBlockSlideNavigation({
-      forward,
-      hasQuestion: Boolean(toValue(currentQuestion)),
-      questionOpen: runtimeState.questionOpen,
-      questionClosed: runtimeState.questionClosed,
-    })) {
-      warningOpen.value = true
-      return
-    }
-    action()
-  }
+  const canGoNext = computed(() => canNavigateForward(guard.value))
+  const canGoPrevious = computed(() => canNavigateBackward(guard.value))
+  const canGoFirst = computed(() => canNavigateBackward(guard.value))
+  const canGoLast = computed(() => canJumpToLastSlide(guard.value))
 
   function first() {
-    navigate(actions.first)
+    if (!canGoFirst.value) return
+    actions.first()
   }
 
   function previous() {
-    navigate(actions.previous)
+    if (!canGoPrevious.value) return
+    actions.previous()
   }
 
   function next() {
-    navigate(actions.next, true)
+    if (!canGoNext.value) return
+    actions.next()
   }
 
   function last() {
-    if (!canJumpToLast.value) return
-    navigate(actions.last, true)
+    if (!canGoLast.value) return
+    actions.last()
   }
 
   return {
-    warningOpen: readonly(warningOpen),
-    canJumpToLast,
-    closeWarning,
+    canGoNext,
+    canGoPrevious,
+    canGoFirst,
+    canGoLast,
     first,
     previous,
     next,
