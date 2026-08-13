@@ -1,3 +1,5 @@
+import { ADMIN_SESSION_API_PATH } from '#shared/utils/roomRoutes'
+
 type AdminSession = { email: string; systemAdmin: boolean }
 
 export function useAdminSession() {
@@ -7,7 +9,7 @@ export function useAdminSession() {
   async function verify() {
     status.value = 'pending'
     try {
-      session.value = await $fetch<AdminSession>('/api/admin/session')
+      session.value = await $fetch<AdminSession>(ADMIN_SESSION_API_PATH)
       status.value = 'authorized'
     }
     catch (error: unknown) {

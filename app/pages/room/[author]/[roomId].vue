@@ -1,75 +1,22 @@
 <script setup lang="ts">
-import { getQuestionNumber } from '#shared/utils/quizSlides'
-
 definePageMeta({ layout: 'room' })
 
-const route = useRoute()
-const roomId = computed(() => String(route.params.roomId))
-const { room, error, status } = useRoomConfig(roomId)
-const realtime = useRealtimeRoomState(roomId)
-const identity = useParticipantIdentity(roomId, computed(() => realtime.state.sessionId))
-
-const currentSlide = computed(() => {
-  const slides = room.value?.slides
-  if (!slides?.length) return undefined
-  const index = Math.min(
-    Math.max(realtime.state.currentSlideIndex, 0),
-    slides.length - 1,
-  )
-  return slides[index]
-})
-const currentQuestion = computed(() => {
-  const slide = currentSlide.value
-  if (slide?.type !== 'question' || !slide.questionId) return undefined
-  return room.value?.questions.find(question => question.id === slide.questionId)
-})
-const currentQuestionNumber = computed(() => getQuestionNumber(
-  room.value?.slides ?? [],
-  currentSlide.value?.id,
-))
-const answerState = computed<'waiting' | 'open' | 'closed'>(() => {
-  if (realtime.state.questionOpen && realtime.state.mode === 'question') return 'open'
-  if (['closed', 'answer', 'result'].includes(realtime.state.mode)) return 'closed'
-  return 'waiting'
-})
-
-const timer = useSyncedQuestionTimer(currentQuestion, realtime.state)
-const localAnswer = useLocalAnswer(
+const {
   roomId,
-  computed(() => currentQuestion.value?.id),
-  computed(() => realtime.state.sessionId),
-)
-const answerSubmission = useRealtimeAnswerSubmission(
-  roomId,
-  computed(() => currentQuestion.value?.id),
-)
-
-async function answerQuestion(
-  choiceIds: string[],
-  options: { atDeadline?: boolean } = {},
-) {
-  if (
-    answerState.value !== 'open'
-    || (timer.isExpired.value && !options.atDeadline)
-    || localAnswer.hasAnswered.value
-  ) return
-
-  try {
-    await answerSubmission.submitAnswer(
-      choiceIds,
-      identity.nickname.value,
-      realtime.state.sessionId,
-    )
-    localAnswer.saveAnswer(choiceIds)
-  }
-  catch {
-    // The submission composable exposes the user-facing error state.
-  }
-}
-
-function saveNickname(nickname: string) {
-  identity.save(nickname)
-}
+  room,
+  error,
+  status,
+  realtime,
+  identity,
+  currentSlide,
+  currentQuestion,
+  currentQuestionNumber,
+  answerState,
+  timer,
+  localAnswer,
+  answerSubmission,
+  answerQuestion,
+} = useParticipantQuizRoom()
 
 useHead({
   title: computed(() => room.value ? `${room.value.title} | Quiz` : 'Quiz Room'),
@@ -82,9 +29,12 @@ useHead({
       :open="identity.loaded.value && !identity.hasNickname.value"
       :room-title="room?.title"
       :current-nickname="identity.nickname.value"
-      @save="saveNickname"
+      @save="identity.save"
     />
-    <WinnerRevealModal :reveal="realtime.state.winnerReveal" />
+    <WinnerRevealModal
+      :reveal="realtime.state.winnerReveal"
+      :participant-nickname="identity.nickname.value"
+    />
     <div v-if="status === 'pending' || status === 'idle'" class="page-message" role="status">
       <span class="loader" aria-hidden="true" />
       部屋情報を読み込んでいます

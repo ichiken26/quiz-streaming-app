@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { ROOM_IDENTIFIER_PATTERN_SOURCE, isValidRoomIdentifier } from '#shared/constants/quiz'
+import { participantRoomPath } from '#shared/utils/roomRoutes'
+
+const author = ref('')
 const roomId = ref('')
 const menuOpen = ref(false)
-const validRoomId = computed(() => /^[A-Za-z0-9._~-]+$/.test(roomId.value.trim()))
+const validRoomId = computed(() => isValidRoomIdentifier(roomId.value))
+const validAuthor = computed(() => isValidRoomIdentifier(author.value))
 
 function enterRoom() {
-  if (!validRoomId.value) return
-  navigateTo(`/room/${encodeURIComponent(roomId.value.trim())}`)
+  if (!validAuthor.value || !validRoomId.value) return
+  navigateTo(participantRoomPath(author.value, roomId.value))
 }
 
 useHead({ title: 'Quiz Stream' })
@@ -36,8 +41,19 @@ useHead({ title: 'Quiz Stream' })
       <section class="join-panel">
         <p class="eyebrow">JOIN LIVE QUIZ</p>
         <h1>ルームに参加する</h1>
-        <p>案内されたルームIDを入力してください。</p>
+        <p>案内された作成者名とルームIDを入力してください。</p>
         <form @submit.prevent="enterRoom">
+          <label for="room-author">作成者のニックネーム</label>
+          <input
+            id="room-author"
+            v-model="author"
+            type="text"
+            autocomplete="off"
+            placeholder="例: kokage"
+            :pattern="ROOM_IDENTIFIER_PATTERN_SOURCE"
+            required
+          >
+          <small v-if="author && !validAuthor">英数字と . _ ~ - のみ使用できます</small>
           <label for="room-id">ルームID</label>
           <div class="join-form-row">
             <input
@@ -46,11 +62,11 @@ useHead({ title: 'Quiz Stream' })
               type="text"
               inputmode="text"
               autocomplete="off"
-              placeholder="例: 2026_GD_welcomeParty"
-              pattern="[A-Za-z0-9._~-]+"
+              placeholder="例: demo_streaming"
+              :pattern="ROOM_IDENTIFIER_PATTERN_SOURCE"
               required
             >
-            <button class="button button--primary" type="submit" :disabled="!validRoomId">
+            <button class="button button--primary" type="submit" :disabled="!validAuthor || !validRoomId">
               参加する
             </button>
           </div>
