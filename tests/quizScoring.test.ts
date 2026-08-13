@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { Question, RealtimeAnswer, Slide } from '../shared/types/quiz.ts'
-import { buildLeaderboard, isAnswerCorrect } from '../shared/utils/quizScoring.ts'
+import { buildLeaderboard, isAnswerCorrect, selectWinnersThroughRank } from '../shared/utils/quizScoring.ts'
 import { getQuestionNumber } from '../shared/utils/quizSlides.ts'
+import { formatWinnerRankRange } from '../shared/utils/winnerRanking.ts'
 
 const questions: Question[] = [
   {
@@ -53,6 +54,29 @@ test('leaderboard excludes previous sessions and keeps tied winners', () => {
     ['Alice', 1],
     ['Bob', 1],
   ])
+})
+
+test('leaderboard assigns competition ranks and selects winners through a configured rank', () => {
+  const result = buildLeaderboard({
+    single: {
+      alice: answer({ participantId: 'alice', nickname: 'Alice' }),
+      bob: answer({ participantId: 'bob', nickname: 'Bob' }),
+      carol: answer({ participantId: 'carol', nickname: 'Carol', choiceId: 'wrong' }),
+    },
+  }, questions, 'current')
+
+  assert.deepEqual(result.map(entry => [entry.nickname, entry.rank]), [
+    ['Alice', 1],
+    ['Bob', 1],
+    ['Carol', 3],
+  ])
+  assert.deepEqual(selectWinnersThroughRank(result, 1).map(entry => entry.nickname), ['Alice', 'Bob'])
+  assert.deepEqual(selectWinnersThroughRank(result, 3).map(entry => entry.nickname), ['Alice', 'Bob', 'Carol'])
+})
+
+test('winner rank label uses a singular label for first place only', () => {
+  assert.equal(formatWinnerRankRange(1), '1位のみ')
+  assert.equal(formatWinnerRankRange(3), '1位から3位まで')
 })
 
 test('question numbers follow quiz order and ignore regular slides', () => {

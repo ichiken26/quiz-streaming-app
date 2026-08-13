@@ -27,15 +27,18 @@ export type Slide = {
 }
 
 export type RoomConfig = {
+  author: string
   roomId: string
   title: string
   description?: string
+  winnerLastRank: number
   initialSlideIndex: number
   slides: Slide[]
   questions: Question[]
 }
 
 export type RoomMode = 'slide' | 'question' | 'closed' | 'answer' | 'result'
+export type AnswerState = 'waiting' | 'open' | 'closed'
 
 export type RoomRuntimeState = {
   sessionId?: string
@@ -53,6 +56,7 @@ export type Winner = {
   nickname: string
   score: number
   totalQuestions: number
+  rank: number
 }
 
 export type WinnerReveal = {
@@ -81,6 +85,7 @@ export type LeaderboardEntry = Winner & {
 }
 
 export type AdminRoomSummary = {
+  author: string
   roomId: string
   title: string
   updatedAt: string

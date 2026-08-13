@@ -35,16 +35,32 @@ export function buildLeaderboard(
     }
   }
 
-  return [...entries.entries()]
+  const sorted = [...entries.entries()]
     .map(([nickname, entry]) => ({
       nickname,
       score: entry.score,
       answeredQuestions: entry.answered.size,
       totalQuestions: questions.length,
+      rank: 0,
     }))
     .sort((a, b) => (
       b.score - a.score
       || b.answeredQuestions - a.answeredQuestions
       || a.nickname.localeCompare(b.nickname, 'ja')
     ))
+
+  let previousScore: number | undefined
+  let previousRank = 0
+  return sorted.map((entry, index) => {
+    if (entry.score !== previousScore) previousRank = index + 1
+    previousScore = entry.score
+    return { ...entry, rank: previousRank }
+  })
+}
+
+export function selectWinnersThroughRank(entries: LeaderboardEntry[], lastRank: number) {
+  const normalizedRank = Math.max(1, Math.floor(lastRank))
+  return entries
+    .filter(entry => entry.rank <= normalizedRank)
+    .map(({ nickname, score, totalQuestions, rank }) => ({ nickname, score, totalQuestions, rank }))
 }

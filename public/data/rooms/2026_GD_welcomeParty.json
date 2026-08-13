@@ -1,7 +1,9 @@
 {
+  "author": "kokage",
   "roomId": "2026_GD_welcomeParty",
   "title": "2026 GD Welcome Party",
   "description": "Welcome party quiz event",
+  "winnerLastRank": 1,
   "initialSlideIndex": 0,
   "slides": [
     {
