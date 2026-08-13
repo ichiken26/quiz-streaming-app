@@ -124,9 +124,9 @@ Cloudflare既定URLを引き続き利用可能にする場合は、`quiz-streami
 ### 5.4 二段階認可
 
 1. Cloudflare AccessのAllow policyでGoogleアカウントを許可する。
-2. Workerの `ADMIN_EMAILS` で `Cf-Access-Authenticated-User-Email` を再検証する。
+2. Workerの `SYSTEM_ADMIN_EMAILS` で `Cf-Access-Authenticated-User-Email` を再検証する。
 
-片方だけ変更しても管理機能は利用できない。Accessだけに追加するとWorkerが403を返し、コードだけに追加してもAccessが入口で拒否する。
+片方だけ変更しても管理機能は利用できない。Accessだけに追加するとWorkerが403を返し、Worker設定だけに追加してもAccessが入口で拒否する。
 
 ## 6. 新しい管理ユーザーを追加する手順
 
@@ -148,14 +148,12 @@ Cloudflare既定URLを引き続き利用可能にする場合は、`quiz-streami
 
 ### 6.3 手順2: Workerの許可リストへ追加する
 
-`worker/index.ts` の `ADMIN_EMAILS` に追加する。
+`wrangler.jsonc` の `vars.SYSTEM_ADMIN_EMAILS` にカンマ区切りで追加する。
 
-```ts
-const ADMIN_EMAILS = new Set([
-  '62ichiken@gmail.com',
-  'ichinose.kenki@tbs.co.jp',
-  'new-admin@example.com',
-])
+```jsonc
+"vars": {
+  "SYSTEM_ADMIN_EMAILS": "62ichiken@gmail.com,ichinose.kenki@tbs.co.jp,new-admin@example.com"
+}
 ```
 
 ### 6.4 手順3: Cloudflare Accessへ追加する
@@ -200,7 +198,7 @@ npm run deploy
 3. 画面に対象メールアドレスと「システム管理者」が表示される。
 4. `system_managed=1` の既存ルームが一覧に表示される。
 5. 新規ルームを作成・編集できる。
-6. `/admin/room/{roomId}` で配信操作できる。
+6. `/admin/room/{author}/{roomId}` で配信操作できる。
 7. 未許可アカウントが管理画面・管理APIへアクセスできない。
 
 API確認例:
@@ -325,7 +323,7 @@ npx wrangler whoami
 2. 回答もパスとpayloadのparticipantId一致だけで書き込み可能。
 3. 回答受付中・締切の判定はSecurity Rulesで強制されない。
 4. 管理APIの画像操作はルーム所有権を検査しない。
-5. `ADMIN_EMAILS` はコードへハードコードされ、ユーザー管理画面や監査ログはない。
+5. `SYSTEM_ADMIN_EMAILS` はWrangler設定で管理され、ユーザー管理画面や監査ログはない。
 6. Access保護を `/admin*` だけに設定し、`/api/admin/*` を保護しない構成は避ける。
 
 本番で厳格な認可が必要な場合は、Firebase Authentication、Admin Custom Claimsまたは署名済みバックエンドAPI、Rulesによる管理者・受付時間検証を追加する。

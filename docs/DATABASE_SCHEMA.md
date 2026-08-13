@@ -59,9 +59,11 @@ CREATE INDEX IF NOT EXISTS rooms_owner_email_updated_at
 
 ```text
 RoomConfig
+├── author: string
 ├── roomId: string
 ├── title: string
 ├── description?: string
+├── winnerLastRank: number
 ├── initialSlideIndex: number
 ├── slides: Slide[]
 │   ├── id: string
@@ -85,6 +87,7 @@ RoomConfig
 ### 2.5 整合性ルール
 
 - `rooms.room_id` と `config_json.roomId` はアプリケーション処理で一致させる。
+- `config_json.author` は公開URLの作成者セグメントと一致させる。
 - `rooms.room_name` と `config_json.title` はアプリケーション処理で同期する。
 - `Slide.questionId` は `Question.id` を論理参照するが、DB外部キーはない。
 - `Choice.id`、`Slide.id`、`Question.id` の一意性はDBで保証しない。
@@ -96,8 +99,9 @@ RoomConfig
 |---|---|
 | `0001_rooms.sql` | `rooms` テーブルと所有者一覧用インデックス作成 |
 | `0002_system_managed_rooms.sql` | `system_managed` 追加、サンプルルーム投入、共同管理化 |
+| `0003_room_author_and_winner_rank.sql` | 既存ルームのauthor更新、`winnerLastRank` の既定値追加 |
 
-サンプルルーム `2026_GD_welcomeParty` は所有者 `62ichiken@gmail.com`、`system_managed=1`。
+サンプルルーム `2026_GD_welcomeParty` は所有者 `62ichiken@gmail.com`、author `kokage`、`system_managed=1`。
 
 ## 3. Firebase Realtime Database
 
@@ -153,7 +157,7 @@ WinnerReveal:
 {
   "open": true,
   "winners": [
-    { "nickname": "クイズ太郎", "score": 5, "totalQuestions": 5 }
+    { "nickname": "クイズ太郎", "score": 5, "totalQuestions": 5, "rank": 1 }
   ],
   "revealedAt": 1784221200000
 }

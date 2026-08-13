@@ -15,7 +15,7 @@
 
 ### 2.1 公開API
 
-`/api/health` と `GET /api/rooms/:roomId` は認証不要。
+`/api/health` と `GET /api/rooms/:author/:roomId` は認証不要。
 
 ### 2.2 管理API
 
@@ -25,7 +25,7 @@
 Cf-Access-Authenticated-User-Email: user@example.com
 ```
 
-Workerは値をtrimし、小文字化して、コード内の `ADMIN_EMAILS` と完全一致する場合だけ許可する。ヘッダーなし、または許可リスト外の場合は `403`。
+Workerは値をtrimし、小文字化して、`wrangler.jsonc`の `SYSTEM_ADMIN_EMAILS` と完全一致する場合だけ許可する。ヘッダーなし、または許可リスト外の場合は `403`。
 
 現行許可メールアドレス:
 
@@ -45,9 +45,11 @@ Workerは値をtrimし、小文字化して、コード内の `ADMIN_EMAILS` と
 
 ```json
 {
+  "author": "creator-name",
   "roomId": "event-room-01",
   "title": "社内クイズ大会",
   "description": "任意の説明",
+  "winnerLastRank": 3,
   "initialSlideIndex": 0,
   "slides": [],
   "questions": []
@@ -56,9 +58,11 @@ Workerは値をtrimし、小文字化して、コード内の `ADMIN_EMAILS` と
 
 | フィールド | 型 | 必須 | 備考 |
 |---|---|---|---|
+| `author` | string | 必須 | 作成者ニックネーム。`^[A-Za-z0-9._~-]+$` |
 | `roomId` | string | 必須 | `^[A-Za-z0-9._~-]+$` |
 | `title` | string | 必須 | 空文字不可。API保存時にtrim |
 | `description` | string | 任意 | APIでは内容を検証しない |
+| `winnerLastRank` | number | 必須 | Winnerとして発表する最終順位。1～10の整数 |
 | `initialSlideIndex` | number | 型上必須 | APIバリデーションでは検査しない |
 | `slides` | array | 必須 | APIは配列であることだけを検査 |
 | `questions` | array | 必須 | APIは配列であることだけを検査 |
@@ -92,7 +96,7 @@ APIのサーバー側バリデーションはルーム全体の詳細構造を�
 | メソッド | パス | 認証 | 概要 |
 |---|---|---|---|
 | GET | `/api/health` | 不要 | D1/R2状態確認 |
-| GET | `/api/rooms/:roomId` | 不要 | 公開ルーム設定取得 |
+| GET | `/api/rooms/:author/:roomId` | 不要 | 公開ルーム設定取得 |
 | GET | `/api/admin/session` | 必要 | 管理セッション確認 |
 | GET | `/api/admin/rooms` | 必要 | 管理可能ルーム一覧 |
 | POST | `/api/admin/rooms` | 必要 | ルーム作成 |
@@ -126,7 +130,7 @@ R2が未バインドの場合、`r2` は `unconfigured`。
 }
 ```
 
-## 6. GET /api/rooms/:roomId
+## 6. GET /api/rooms/:author/:roomId
 
 公開用ルーム設定を取得する。
 
@@ -288,7 +292,7 @@ Content-Type: image/png
 | HTTP | 条件 | 本文 |
 |---|---|---|
 | 403 | 認可失敗 | `アクセス権限がありません` |
-| 415 | Content-Typeが `image/` で始まらない | `画像ファイルを選択してください` |
+| 415 | Content-Typeが `image/jpeg` または `image/png` 以外 | `JPEGまたはPNG画像を選択してください` |
 | 503 | R2未バインド | `R2がまだ有効化されていません` |
 
 現行APIは、パスのroomIdに対するルーム所有権やルーム存在を検査しない。

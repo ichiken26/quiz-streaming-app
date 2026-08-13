@@ -25,17 +25,17 @@
 | URL | 公開範囲 | 説明 |
 |---|---|---|
 | `/` | 公開 | ルーム参加トップ |
-| `/room/{roomId}` | 公開 | 参加者用クイズルーム |
+| `/room/{author}/{roomId}` | 公開 | 参加者用クイズルーム |
 | `/admin` | 管理者 | 管理ルーム一覧 |
 | `/admin/edit` | 管理者 | 新規ルーム作成 |
 | `/admin/edit?q={roomId}` | 管理者 | 既存ルーム編集。正規の編集クエリ |
 | `/admin/edit?roomId={roomId}` | 管理者 | 既存ルーム編集。互換入力として受付 |
-| `/admin/room/{roomId}` | 管理者 | 配信・進行操作 |
+| `/admin/room/{author}/{roomId}` | 管理者 | 配信・進行操作 |
 
 ### 3.1 具体例
 
-- 参加者: `https://quiz-streaming-app.kokage-studio.com/room/2026_GD_welcomeParty`
-- 管理者配信: `https://quiz-streaming-app.kokage-studio.com/admin/room/2026_GD_welcomeParty`
+- 参加者: `https://quiz-streaming-app.kokage-studio.com/room/kokage/2026_GD_welcomeParty`
+- 管理者配信: `https://quiz-streaming-app.kokage-studio.com/admin/room/kokage/2026_GD_welcomeParty`
 - 編集: `https://quiz-streaming-app.kokage-studio.com/admin/edit?q=2026_GD_welcomeParty`
 
 ### 3.2 Cloudflare Access保護範囲
@@ -51,7 +51,7 @@ Cloudflare Zero TrustのSelf-hosted applicationで、本番ホスト `quiz-strea
 | メソッド | URL | 公開範囲 |
 |---|---|---|
 | GET | `/api/health` | 公開 |
-| GET | `/api/rooms/{roomId}` | 公開 |
+| GET | `/api/rooms/{author}/{roomId}` | 公開 |
 | GET | `/api/admin/session` | Worker許可リスト |
 | GET | `/api/admin/rooms` | Worker許可リスト |
 | POST | `/api/admin/rooms` | Worker許可リスト |
