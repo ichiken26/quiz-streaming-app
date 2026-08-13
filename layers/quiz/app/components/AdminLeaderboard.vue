@@ -11,8 +11,8 @@ defineProps<{ entries: readonly LeaderboardEntry[] }>()
       <strong>{{ entries.length }}<span>人</span></strong>
     </header>
     <ol v-if="entries.length">
-      <li v-for="(entry, index) in entries" :key="entry.nickname">
-        <b>{{ index + 1 }}</b>
+      <li v-for="entry in entries" :key="entry.nickname">
+        <b>{{ entry.rank }}</b>
         <span>{{ entry.nickname }}</span>
         <strong>{{ entry.score }} / {{ entry.totalQuestions }}</strong>
       </li>

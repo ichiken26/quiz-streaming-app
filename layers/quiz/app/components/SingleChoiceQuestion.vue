@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Question } from '#shared/types/quiz'
+import type { AnswerState, Question } from '#shared/types/quiz'
+import { canInteractWithAnswer } from '#shared/utils/roomRuntime'
 
 const props = defineProps<{
   question: Question
@@ -8,7 +9,7 @@ const props = defineProps<{
   expired: boolean
   answeredChoiceId?: string
   answeredChoiceIds?: readonly string[]
-  answerState: 'waiting' | 'open' | 'closed'
+  answerState: AnswerState
   submitting?: boolean
   submissionError?: string
 }>()
@@ -20,9 +21,12 @@ const emit = defineEmits<{
 const selectedChoiceIds = ref<string[]>([])
 const submissionRequested = ref(false)
 const hasAnswered = computed(() => Boolean(props.answeredChoiceId))
-const isLocked = computed(
-  () => props.answerState !== 'open' || props.expired || hasAnswered.value || props.submitting,
-)
+const isLocked = computed(() => !canInteractWithAnswer({
+  answerState: props.answerState,
+  expired: props.expired,
+  hasAnswered: hasAnswered.value,
+  submitting: Boolean(props.submitting),
+}))
 
 watch(
   [() => props.question.id, () => props.answeredChoiceId],
@@ -55,7 +59,7 @@ watch(
   ([expired, answerState, submitting, answeredChoiceId]) => {
     if (
       !expired
-      || answerState !== 'open'
+      || (answerState !== 'open' && answerState !== 'closed')
       || submitting
       || answeredChoiceId
       || submissionRequested.value
@@ -83,16 +87,29 @@ watch(
         v-for="choice in question.choices"
         :key="choice.id"
         class="choice"
-        :class="{ 'choice--selected': selectedChoiceIds.includes(choice.id) }"
+        :class="{
+          'choice--selected': selectedChoiceIds.includes(choice.id),
+          'choice--disabled': isLocked,
+        }"
+        :aria-disabled="isLocked"
       >
         <input
           v-if="question.type === 'single'"
           :checked="selectedChoiceIds[0] === choice.id"
           type="radio"
           :value="choice.id"
+          :disabled="isLocked"
+          :tabindex="isLocked ? -1 : 0"
           @change="selectedChoiceIds = [choice.id]"
         >
-        <input v-else v-model="selectedChoiceIds" type="checkbox" :value="choice.id">
+        <input
+          v-else
+          v-model="selectedChoiceIds"
+          type="checkbox"
+          :value="choice.id"
+          :disabled="isLocked"
+          :tabindex="isLocked ? -1 : 0"
+        >
         <span class="choice__label">{{ choice.label }}</span>
         <span class="choice__text">{{ choice.text }}</span>
       </label>

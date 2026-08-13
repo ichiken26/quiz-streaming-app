@@ -1,6 +1,6 @@
 import { onValue, ref as databaseRef } from 'firebase/database'
 import type { Question, RealtimeAnswer } from '#shared/types/quiz'
-import { buildLeaderboard } from '#shared/utils/quizScoring'
+import { buildLeaderboard, selectWinnersThroughRank } from '#shared/utils/quizScoring'
 
 export function useRealtimeLeaderboard(
   roomId: MaybeRefOrGetter<string>,
@@ -17,13 +17,11 @@ export function useRealtimeLeaderboard(
     toValue(sessionId),
   ))
 
-  const winners = computed(() => {
-    const topScore = leaderboard.value[0]?.score
-    if (topScore === undefined) return []
-    return leaderboard.value
-      .filter(entry => entry.score === topScore)
-      .map(({ nickname, score, totalQuestions }) => ({ nickname, score, totalQuestions }))
-  })
+  const winners = computed(() => selectWinnersThroughRank(leaderboard.value, 1))
+
+  function winnersThroughRank(lastRank: number) {
+    return selectWinnersThroughRank(leaderboard.value, lastRank)
+  }
 
   function unsubscribeAll() {
     unsubscribers.forEach(unsubscribe => unsubscribe())
@@ -62,6 +60,7 @@ export function useRealtimeLeaderboard(
   return {
     leaderboard: readonly(leaderboard),
     winners: readonly(winners),
+    winnersThroughRank,
     connectionError: readonly(connectionError),
   }
 }

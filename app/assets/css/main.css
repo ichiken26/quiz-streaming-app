@@ -447,7 +447,9 @@ select:focus {
 .join-panel h1 { margin: 8px 0; font-size: clamp(30px, 7vw, 54px); }
 .join-panel > p:not(.eyebrow) { margin: 0 0 32px; color: var(--muted); }
 .join-panel form, .join-panel label { display: grid; gap: 8px; }
+.join-panel form { gap: 10px; }
 .join-panel label { color: var(--muted); font-size: 12px; font-weight: 800; }
+.join-panel form > input { min-height: 52px; padding: 10px 14px; font-family: ui-monospace, monospace; }
 .join-form-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .join-form-row input { min-width: 0; min-height: 52px; padding: 10px 14px; font-family: ui-monospace, monospace; }
 .join-panel small, .editor-meta small { color: #ffaaaa; }
@@ -514,16 +516,25 @@ select:focus {
   background:
     radial-gradient(circle at center, rgb(231 255 91 / 20%), transparent 45%),
     rgb(0 0 0 / 88%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  align-content: safe center;
 }
 
 .winner-modal {
   display: grid;
   width: min(100%, 520px);
+  max-height: calc(100dvh - 40px);
   justify-items: center;
   gap: 10px;
   padding: clamp(22px, 5vmin, 42px);
+  margin: auto;
   border: 2px solid var(--lime);
   background: #11150b;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   text-align: center;
 }
 
@@ -534,6 +545,16 @@ select:focus {
 .winner-modal li { display: grid; gap: 2px; padding: 8px; border-bottom: 1px solid #4b5426; }
 .winner-modal li strong { overflow-wrap: anywhere; font-size: clamp(20px, 5vmin, 34px); }
 .winner-modal li span, .winner-modal > p { color: var(--muted); font-size: 14px; }
+.winner-modal .winner-modal__personal-rank {
+  width: 100%;
+  padding: 12px;
+  margin: 2px 0;
+  border: 1px solid var(--lime);
+  background: rgb(231 255 91 / 10%);
+  color: var(--lime);
+  font-size: clamp(20px, 5vmin, 30px);
+  font-weight: 900;
+}
 
 .button--go {
   width: 100%;
@@ -546,6 +567,7 @@ select:focus {
 }
 
 .winner-control { padding: 12px; border: 1px solid #596326; background: #171b0d; }
+.winner-rank-setting { margin-bottom: 10px; color: var(--muted); font-size: 12px; }
 
 .session-reset-control {
   padding-top: 14px;
@@ -553,6 +575,18 @@ select:focus {
 }
 
 .session-reset-control .button { width: 100%; }
+.session-reset-backdrop { background: rgb(0 0 0 / 84%); }
+.session-reset-modal {
+  width: min(100%, 540px);
+  padding: 30px;
+  border: 1px solid #713737;
+  border-top: 5px solid var(--red);
+  background: var(--surface);
+}
+.session-reset-modal .eyebrow { color: var(--red); }
+.session-reset-modal h1 { margin: 8px 0 12px; font-size: clamp(24px, 5vw, 34px); }
+.session-reset-modal > p:not(.eyebrow) { color: var(--muted); line-height: 1.7; }
+.session-reset-modal .button-row { justify-content: end; margin-top: 20px; }
 
 .admin-leaderboard {
   padding: 14px;
@@ -597,8 +631,13 @@ select:focus {
 
 .admin-hub__header h1,
 .editor-header h1 { margin: 6px 0; font-size: clamp(26px, 5vw, 42px); }
-.admin-hub__header p:last-child, .editor-header small { color: var(--muted); }
+.admin-session-email, .editor-header small { color: var(--muted); }
 .admin-hub__header .button { text-decoration: none; }
+.admin-identity-row { display: flex; align-items: end; flex-wrap: wrap; gap: 10px 18px; }
+.admin-identity-row p { margin: 0; }
+.admin-author-field { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.admin-author-field input { width: min(220px, 42vw); min-height: 36px; padding: 6px 9px; font-family: ui-monospace, monospace; }
+.admin-author-error { display: block; margin-top: 6px; color: #ffaaaa; }
 
 .room-list { display: grid; gap: 8px; padding-top: 22px; }
 .room-list__item {
@@ -638,7 +677,7 @@ select:focus {
 
 .editor-meta {
   display: grid;
-  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   padding: 22px 0;
 }
@@ -830,6 +869,10 @@ select:focus {
   border-color: var(--cyan);
   background: #111d24;
 }
+
+.choice--disabled { cursor: not-allowed; }
+.choice--disabled:not(.choice--selected) { opacity: .58; }
+.choice--disabled:hover:not(.choice--selected) { border-color: var(--border); background: #0d1015; }
 
 .choice input {
   width: 22px;
@@ -1280,6 +1323,7 @@ select:focus {
 
   .winner-backdrop {
     padding: 10px;
+    align-content: safe center;
   }
 
   .winner-modal {
@@ -1287,7 +1331,6 @@ select:focus {
     max-height: calc(100dvh - 20px);
     gap: 4px;
     padding: 12px 16px;
-    overflow: auto;
     border-width: 1px;
   }
 
