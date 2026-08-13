@@ -19,6 +19,9 @@ npm run dev
 ```
 
 `.env`にFirebase Webアプリの設定値を入力してください。
+`npm run dev`はローカルD1のマイグレーション、Worker API、Nuxtをまとめて起動します。
+画面は <http://localhost:3000>、Workerは内部的に `localhost:8787` を使用します。
+ローカル管理画面のメールアドレスは、必要な場合だけ`.env`の`LOCAL_ADMIN_EMAIL`で変更できます。
 
 ```dotenv
 NUXT_PUBLIC_FIREBASE_API_KEY=...
@@ -30,8 +33,8 @@ NUXT_PUBLIC_FIREBASE_APP_ID=...
 
 Realtime Databaseには[firebase.database.rules.json](./firebase.database.rules.json)のRulesを設定します。このRulesは認証未実装のMVP用で、管理者URLを知るユーザーによるruntime更新を防げません。本番運用前にFirebase Authenticationと管理者権限の検証が必要です。
 
-- 参加者: <http://localhost:3000/room/2026_GD_welcomeParty>
-- 管理者: <http://localhost:3000/admin/room/2026_GD_welcomeParty>
+- 参加者: <http://localhost:3000/room/kokage/2026_GD_welcomeParty>
+- 管理者: <http://localhost:3000/admin/room/kokage/2026_GD_welcomeParty>
 
 ## Static generation
 
@@ -103,7 +106,8 @@ npx wrangler d1 migrations apply quiz-streaming-app-db --remote
 ```
 
 管理APIはCloudflare Accessが付与する`Cf-Access-Authenticated-User-Email`を確認し、
-`62ichiken@gmail.com`と`ichinose.kenki@tbs.co.jp`だけを許可します。
+`wrangler.jsonc`の`SYSTEM_ADMIN_EMAILS`に設定されたメールアドレスだけを許可します。
+現在は`62ichiken@gmail.com`と`ichinose.kenki@tbs.co.jp`を設定しています。
 この2名はシステム管理者であり、`system_managed = 1`のルームを共同管理します。
 システム管理者が作成したルームは自動的に共同管理対象になります。
 
@@ -118,6 +122,8 @@ npx wrangler d1 migrations apply quiz-streaming-app-db --remote
 
 ルーム編集画面では通常画像コンテンツだけでなく、各クイズにも任意の画像を設定できます。
 クイズ画像はR2へ保存され、問題文・選択肢・解答設定とは独立して差し替え・削除できます。
+PDFはブラウザ内でページごとのPNGへ変換され、画像コンテンツの一覧として追加されます。
+コンテンツの右クリックから、対象直下への追加と画像・クイズ間の変換ができます。
 
 新しいroomIdの画面はWorkersのSPAフォールバックで配信され、ルーム設定はD1から取得されます。
 
@@ -131,8 +137,10 @@ npx wrangler d1 migrations apply quiz-streaming-app-db --remote
 - 参加者回答は`rooms/{roomId}/answers/{questionId}/{participantId}`へ保存され、管理画面で選択肢別件数をリアルタイム表示します。
 - 回答時間が0秒になった時点で未送信の選択肢がある場合、その瞬間の選択内容を自動送信します。
   未選択の場合は未回答のままとし、手動送信と自動送信の二重実行は防止します。
-- 管理画面は全問題をニックネーム単位で採点し、最終スライドの`GO`で最高得点者を
-  `runtime.winnerReveal`へ公開します。同点者は全員を同率優勝として同期表示します。
+- 回答時間が0秒になると管理画面から回答受付を自動で締め切ります。参加者は回答受付中のみ選択肢を操作できます。
+- 管理画面は全問題をニックネーム単位で採点し、ルーム作成・編集画面上部で指定した順位までを最終スライドの`GO`で
+  `runtime.winnerReveal`へ公開します。同点者は同じ順位として全員を同期表示します。
+- Winnerに選ばれた参加者には、発表モーダル内で本人の順位も表示します。
 - 管理画面のセッションリセットは`runtime.sessionId`を更新し、以前の回答を集計対象外にします。
   参加中の端末はこの変更を購読し、ルーム別のニックネーム、participantId、回答済み状態を
   localStorageから削除します。

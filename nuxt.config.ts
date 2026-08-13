@@ -1,4 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+const localWorkerPort = Number(process.env.LOCAL_WORKER_PORT ?? 8787)
+const localWorkerUrl = process.env.LOCAL_WORKER_URL ?? `http://127.0.0.1:${localWorkerPort}`
+const localAdminEmail = process.env.LOCAL_ADMIN_EMAIL ?? '62ichiken@gmail.com'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   extends: [
@@ -8,6 +12,26 @@ export default defineNuxtConfig({
   ],
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: localWorkerUrl,
+          changeOrigin: true,
+          headers: {
+            'cf-access-authenticated-user-email': localAdminEmail,
+          },
+        },
+        '/slides': {
+          target: localWorkerUrl,
+          changeOrigin: true,
+          headers: {
+            'cf-access-authenticated-user-email': localAdminEmail,
+          },
+        },
+      },
+    },
+  },
   runtimeConfig: {
     public: {
       firebaseApiKey: '',
@@ -20,8 +44,8 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       routes: [
-        '/room/2026_GD_welcomeParty',
-        '/admin/room/2026_GD_welcomeParty',
+        '/room/kokage/2026_GD_welcomeParty',
+        '/admin/room/kokage/2026_GD_welcomeParty',
       ],
     },
   },
