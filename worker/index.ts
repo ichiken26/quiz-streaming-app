@@ -23,7 +23,7 @@ interface RoomConfigPayload {
   description?: string
 }
 
-const ADMIN_EMAILS = new Set([
+const SYSTEM_ADMIN_EMAILS = new Set([
   '62ichiken@gmail.com',
   'ichinose.kenki@tbs.co.jp',
 ])
@@ -45,12 +45,11 @@ function accessEmail(request: Request) {
 }
 
 function authorizedEmail(request: Request) {
-  const email = accessEmail(request)
-  return email && ADMIN_EMAILS.has(email) ? email : undefined
+  return accessEmail(request)
 }
 
 function isSystemAdmin(email: string) {
-  return ADMIN_EMAILS.has(email)
+  return SYSTEM_ADMIN_EMAILS.has(email)
 }
 
 function canManageRoom(row: RoomRow, email: string) {
