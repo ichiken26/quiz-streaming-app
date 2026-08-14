@@ -5,6 +5,9 @@ const localAdminEmail = process.env.LOCAL_ADMIN_EMAIL ?? '62ichiken@gmail.com'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  // Static Assets + Worker SPA fallback: deep links must hydrate as a client router.
+  // SSG HTML for `/` would otherwise force the landing route when `/room/...` is opened directly.
+  ssr: false,
   extends: [
     './layers/streaming',
     './layers/quiz',
@@ -43,10 +46,8 @@ export default defineNuxtConfig({
   },
   nitro: {
     prerender: {
-      routes: [
-        '/room/kokage/2026_GD_welcomeParty',
-        '/admin/room/kokage/2026_GD_welcomeParty',
-      ],
+      crawlLinks: false,
+      routes: ['/'],
     },
   },
 })

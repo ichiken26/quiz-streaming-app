@@ -14,9 +14,9 @@
 ## 2. URL設計原則
 
 - すべての本番通信はHTTPS。
-- 画面はNuxt SPAとして配信する。
-- 未生成の画面URLへのGETで `Accept: text/html` がある場合、Workerは `/` を返してクライアントルーティングを成立させる。
-- API、R2画像、静的アセットはSPAフォールバック対象外。
+- 画面はNuxt SPA（`ssr: false`）として配信する。
+- `/room/{author}/{roomId}` や `/admin/edit?q=...` など未生成の深いURLへ直接アクセスした場合、Workerは `index.html` を返してクライアントルーティングを成立させる。
+- API、R2画像、拡張子付き静的アセットはSPAフォールバック対象外。
 - `roomId` は半角英数字と `.`, `_`, `~`, `-` のみ。
 - 動的値はURLエンコードする。
 

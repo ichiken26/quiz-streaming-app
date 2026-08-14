@@ -13,18 +13,23 @@ async function health(env: Env) {
   }
 }
 
-async function staticAsset(request: Request, env: Env) {
-  const asset = await env.ASSETS.fetch(request)
-  if (
-    asset.status !== 404
-    || request.method !== 'GET'
-    || !request.headers.get('accept')?.includes('text/html')
-  ) return asset
+function isSpaNavigation(request: Request, pathname: string) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return false
+  if (pathname.startsWith('/api/') || pathname.startsWith('/slides/')) return false
+  // Static files keep their own 404; app routes are extensionless.
+  const lastSegment = pathname.split('/').pop() ?? ''
+  if (lastSegment.includes('.') && !lastSegment.endsWith('.html')) return false
+  const accept = request.headers.get('accept') ?? ''
+  return accept.includes('text/html') || accept.includes('*/*') || accept === ''
+}
 
-  const fallback = new URL(request.url)
-  fallback.pathname = '/'
-  fallback.search = ''
-  return env.ASSETS.fetch(new Request(fallback, request))
+async function staticAsset(request: Request, env: Env) {
+  const url = new URL(request.url)
+  const asset = await env.ASSETS.fetch(request)
+  if (asset.status !== 404 || !isSpaNavigation(request, url.pathname)) return asset
+
+  // Serve the SPA shell. Browser URL stays as the deep link for client routing.
+  return env.ASSETS.fetch(new URL('/index.html', url.origin))
 }
 
 export default {
