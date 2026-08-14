@@ -29,6 +29,8 @@ const emit = defineEmits<{
   removeChoice: [question: Question, choiceId: string]
   addChoice: [question: Question]
   updateTimeLimit: [question: Question, seconds: number]
+  chooseAudio: [question: Question]
+  removeAudio: [question: Question]
   dropFiles: [event: DragEvent]
 }>()
 
@@ -114,6 +116,8 @@ function updateTimeLimit(question: Question, seconds: number) {
           @remove-choice="$emit('removeChoice', questionFor(slide)!, $event)"
           @add-choice="$emit('addChoice', questionFor(slide)!)"
           @update-time-limit="updateTimeLimit(questionFor(slide)!, $event)"
+          @choose-audio="$emit('chooseAudio', questionFor(slide)!)"
+          @remove-audio="$emit('removeAudio', questionFor(slide)!)"
         />
       </article>
 

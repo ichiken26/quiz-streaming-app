@@ -8,10 +8,16 @@ export type Choice = {
   text: string
 }
 
+export type QuestionAudio = {
+  url: string
+  name: string
+}
+
 export type Question = {
   id: string
   type: QuestionType
   text: string
+  audio?: QuestionAudio
   choices: Choice[]
   correctChoiceId?: string
   correctChoiceIds?: string[]

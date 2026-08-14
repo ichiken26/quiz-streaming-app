@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { QUIZ_EDITOR_LIMITS } from '#shared/constants/quiz'
 import type { Choice, Question, QuestionType, Slide } from '#shared/types/quiz'
 import { getCorrectChoiceIds } from '#shared/utils/quizScoring'
@@ -13,6 +14,9 @@ defineEmits<{
   chooseImage: []
   removeImage: []
   dropImage: [files?: FileList]
+  chooseAudio: []
+  removeAudio: []
+  previewAudio: []
   updateType: [type: QuestionType]
   updateText: [text: string]
   updateChoice: [choice: Choice, text: string]
@@ -23,6 +27,8 @@ defineEmits<{
   addChoice: []
   updateTimeLimit: [seconds: number]
 }>()
+
+const previewAudioRef = ref<HTMLAudioElement>()
 </script>
 
 <template>
@@ -112,5 +118,35 @@ defineEmits<{
         > 秒
       </span>
     </label>
+    <div class="quiz-audio-editor">
+      <label>音声</label>
+      <div class="quiz-audio-editor__body">
+        <button class="button button--secondary" type="button" @click="$emit('chooseAudio')">
+          ファイルを選択
+        </button>
+        <template v-if="question.audio">
+          <p class="quiz-audio-editor__name">{{ question.audio.name }}</p>
+          <audio
+            ref="previewAudioRef"
+            :src="question.audio.url"
+            preload="metadata"
+            class="visually-hidden"
+          />
+          <div class="quiz-audio-editor__actions">
+            <button
+              class="button button--secondary"
+              type="button"
+              @click="previewAudioRef?.paused ? previewAudioRef?.play() : previewAudioRef?.pause()"
+            >
+              ▶ プレビュー
+            </button>
+            <button class="button button--danger" type="button" @click="$emit('removeAudio')">
+              削除
+            </button>
+          </div>
+        </template>
+        <p v-else class="quiz-audio-editor__empty">MP3（最大20MB）を設定できます</p>
+      </div>
+    </div>
   </div>
 </template>

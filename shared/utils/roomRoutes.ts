@@ -22,3 +22,8 @@ export function adminImageApiPath(roomId: string, objectName?: string) {
   const base = `/api/admin/images/${segment(roomId)}`
   return objectName ? `${base}/${segment(objectName)}` : base
 }
+
+export function adminAudioApiPath(roomId: string, objectName?: string) {
+  const base = `/api/admin/audio/${segment(roomId)}`
+  return objectName ? `${base}/${segment(objectName)}` : base
+}

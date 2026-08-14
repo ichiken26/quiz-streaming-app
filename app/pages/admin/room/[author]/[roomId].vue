@@ -74,6 +74,12 @@ useHead({
         </section>
 
         <aside class="admin-sidebar">
+          <AdminQuestionAudioPlayer
+            :audio-url="controller.currentQuestion.value?.audio?.url"
+            :question-id="controller.currentQuestion.value?.id"
+            :slide-key="`${realtime.state.currentSlideIndex}:${controller.currentSlide.value?.id ?? ''}`"
+          />
+
           <AdminControls
             :state="realtime.state"
             :total="room.slides.length"

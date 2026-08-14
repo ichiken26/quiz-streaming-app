@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Choice, Question, QuestionType, Slide } from '#shared/types/quiz'
 import { ACCEPTED_SLIDE_MEDIA_ACCEPT } from '#shared/utils/slideMedia'
+import { QUESTION_AUDIO_ACCEPT } from '#shared/utils/questionAudio'
 
 definePageMeta({ layout: 'admin' })
 
@@ -88,6 +89,18 @@ const {
   onDropFiles,
 } = media
 
+const audio = useRoomEditorAudio(room, {
+  markChanged,
+  setError: message => { saveError.value = message },
+})
+const {
+  audioInput,
+  chooseAudio,
+  onAudioSelected,
+  deleteStoredAudio,
+  removeQuestionAudio,
+} = audio
+
 startPersistence(authStatus)
 
 function updateRoomField(field: 'author' | 'roomId' | 'title', value: string) {
@@ -131,11 +144,19 @@ function updateSlideTitle(slide: Slide, title: string) {
 }
 
 function removeSelectedSlides() {
-  void removeSlides(selected.value, deleteStoredImage)
+  void removeSlides(selected.value, deleteStoredImage, deleteStoredAudio)
 }
 
 function removeContextSlide() {
-  void removeSlides(new Set([contextMenu.slideId]), deleteStoredImage)
+  void removeSlides(new Set([contextMenu.slideId]), deleteStoredImage, deleteStoredAudio)
+}
+
+function chooseQuestionAudio(question: Question) {
+  chooseAudio(question.id)
+}
+
+function removeAudio(question: Question) {
+  void removeQuestionAudio(question)
 }
 
 useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルーム作成'} | Quiz Stream`) })
@@ -224,6 +245,8 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
         @remove-choice="removeChoice"
         @add-choice="addChoice"
         @update-time-limit="updateTimeLimit"
+        @choose-audio="chooseQuestionAudio"
+        @remove-audio="removeAudio"
         @drop-files="onDropFiles"
       />
       <input
@@ -233,6 +256,13 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
         :accept="ACCEPTED_SLIDE_MEDIA_ACCEPT"
         multiple
         @change="uploadFiles(($event.target as HTMLInputElement).files ?? [])"
+      >
+      <input
+        ref="audioInput"
+        class="visually-hidden"
+        type="file"
+        :accept="QUESTION_AUDIO_ACCEPT"
+        @change="onAudioSelected(($event.target as HTMLInputElement).files)"
       >
 
       <AdminRoomSharePanel

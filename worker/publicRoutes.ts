@@ -1,4 +1,5 @@
 import { notFound, json } from './http'
+import { sanitizePublicRoomConfig } from '../shared/utils/publicRoomConfig'
 import { findRoom, roomConfig } from './roomRepository'
 import type { Env } from './types'
 
@@ -11,7 +12,9 @@ export async function handlePublicRoom(
   const row = await findRoom(env, roomId)
   if (row) {
     const room = roomConfig(row)
-    return room.author === author ? json(room) : notFound('ルームが見つかりません')
+    return room.author === author
+      ? json(sanitizePublicRoomConfig(room))
+      : notFound('ルームが見つかりません')
   }
 
   const fallback = new URL(request.url)
@@ -22,7 +25,9 @@ export async function handlePublicRoom(
     return notFound('ルームが見つかりません')
   }
   const room = await response.json<import('../shared/types/quiz').RoomConfig>()
-  return room.author === author ? json(room) : notFound('ルームが見つかりません')
+  return room.author === author
+    ? json(sanitizePublicRoomConfig(room))
+    : notFound('ルームが見つかりません')
 }
 
 export async function handleSlideAsset(env: Env, pathname: string) {

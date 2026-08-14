@@ -149,9 +149,19 @@ export function useRoomEditor() {
     selected.value = next
   }
 
-  async function removeSlides(ids: Set<string>, deleteImage: (imageUrl: string) => Promise<void>) {
+  async function removeSlides(
+    ids: Set<string>,
+    deleteImage: (imageUrl: string) => Promise<void>,
+    deleteAudio: (audioUrl: string) => Promise<void>,
+  ) {
     const removed = room.slides.filter(slide => ids.has(slide.id))
-    await Promise.all(removed.map(slide => deleteImage(slide.imageUrl)))
+    await Promise.all(removed.map(async (slide) => {
+      if (slide.imageUrl) await deleteImage(slide.imageUrl)
+      if (slide.type === 'question' && slide.questionId) {
+        const question = room.questions.find(item => item.id === slide.questionId)
+        if (question?.audio?.url) await deleteAudio(question.audio.url)
+      }
+    }))
     const questionIds = new Set(
       removed.flatMap(slide => slide.type === 'question' && slide.questionId ? [slide.questionId] : []),
     )

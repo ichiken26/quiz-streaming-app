@@ -6,7 +6,7 @@ export function useAdminQuizRoom() {
   const route = useRoute()
   const author = computed(() => String(route.params.author))
   const roomId = computed(() => String(route.params.roomId))
-  const config = useRoomConfig(author, roomId)
+  const config = useAdminRoomConfig(roomId)
   const realtime = useRealtimeRoomState(roomId)
   const controller = useRoomRuntimeState(config.room, realtime.state, realtime.publishState)
   const timer = useSyncedQuestionTimer(

@@ -722,6 +722,31 @@ select:focus {
 .quiz-image-editor__empty { display: grid; place-content: center; gap: 5px; padding: 16px; color: var(--muted); text-align: center; }
 .quiz-image-editor__empty strong { color: var(--text); }
 .quiz-image-editor__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.quiz-audio-editor { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--border); background: rgba(255,255,255,.02); }
+.quiz-audio-editor > label { color: var(--muted); font-size: 12px; font-weight: 750; }
+.quiz-audio-editor__body { display: grid; gap: 8px; }
+.quiz-audio-editor__name { margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.quiz-audio-editor__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.quiz-audio-editor__empty { margin: 0; color: var(--muted); font-size: 12px; }
+.admin-audio-player {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #596326;
+  border-radius: 6px;
+  background: #171b0d;
+}
+.admin-audio-player__controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-audio-player__seek input[type="range"] {
+  width: 100%;
+  accent-color: var(--lime);
+}
+.admin-audio-player__time {
+  margin: 0;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
 .quiz-content textarea { resize: vertical; }
 .choice-editor { display: grid; gap: 7px; padding: 12px; border: 1px solid var(--border); }
 .choice-editor legend { padding: 0 6px; color: var(--muted); font-size: 12px; font-weight: 750; }

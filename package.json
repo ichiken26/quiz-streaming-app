@@ -12,6 +12,7 @@
     "preview": "nuxt preview",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:scoring": "node --experimental-strip-types --test tests/quizScoring.test.ts",
+    "test:audio": "node --experimental-strip-types --test tests/questionAudio.test.ts",
     "deploy": "wrangler deploy -c wrangler.jsonc",
     "deploy:preview": "npm run generate && wrangler versions upload --preview-alias prompt2",
     "deploy:dry-run": "npm run generate && wrangler deploy --dry-run",
