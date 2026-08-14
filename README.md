@@ -6,6 +6,7 @@ Nuxt 4とFirebase Realtime Databaseで構築したクイズ大会向けアプリ
 
 - [画面仕様書](./docs/SCREEN_SPEC.md)
 - [API仕様書](./docs/API_SPEC.md)
+- [OpenAPI仕様](./docs/openapi.yaml)
 - [DBスキーマ定義書](./docs/DATABASE_SCHEMA.md)
 - [URL仕様書](./docs/URL_SPEC.md)
 - [クラウド構成・運用仕様書](./docs/CLOUD_SPEC.md)

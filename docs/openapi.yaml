@@ -1,0 +1,674 @@
+openapi: 3.1.0
+info:
+  title: Quiz Streaming App API
+  version: 1.1.0
+  description: |
+    Cloudflare Workers 上で動作する Quiz Streaming App の HTTP API。
+    管理 API は Cloudflare Access による認証が必要。
+servers:
+  - url: https://quiz-streaming-app.kokage-studio.com
+    description: Production
+tags:
+  - name: Public
+    description: 認証不要の公開 API
+  - name: Admin
+    description: Cloudflare Access 認証が必要な管理 API
+  - name: Assets
+    description: Worker が配信する静的/動的アセット
+
+paths:
+  /api/health:
+    get:
+      tags: [Public]
+      summary: ヘルスチェック
+      operationId: getHealth
+      responses:
+        '200':
+          description: D1/R2 接続正常
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: D1 接続不可
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthErrorResponse'
+
+  /api/rooms/{author}/{roomId}:
+    get:
+      tags: [Public]
+      summary: 公開ルーム設定取得
+      operationId: getPublicRoom
+      parameters:
+        - $ref: '#/components/parameters/Author'
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: 参加者向け RoomConfig（音声メタデータは除外）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicRoomConfig'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/admin/session:
+    get:
+      tags: [Admin]
+      summary: 管理セッション確認
+      operationId: getAdminSession
+      security:
+        - CloudflareAccess: []
+      responses:
+        '200':
+          description: 認証済み管理者情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSession'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/rooms:
+    get:
+      tags: [Admin]
+      summary: 管理可能ルーム一覧
+      operationId: listAdminRooms
+      security:
+        - CloudflareAccess: []
+      responses:
+        '200':
+          description: 更新日時降順のルーム一覧
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [rooms]
+                properties:
+                  rooms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminRoomSummary'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [Admin]
+      summary: ルーム作成
+      operationId: createRoom
+      security:
+        - CloudflareAccess: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomUpsertRequest'
+      responses:
+        '201':
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomIdResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/admin/rooms/{roomId}:
+    get:
+      tags: [Admin]
+      summary: 管理用ルーム設定取得
+      operationId: getAdminRoom
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+      responses:
+        '200':
+          description: 管理用 RoomConfig（音声メタデータを含む）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomConfig'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/RoomNotFound'
+    patch:
+      tags: [Admin]
+      summary: ルーム更新
+      operationId: updateRoom
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomUpsertRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomIdResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/RoomNotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/admin/images/{roomId}:
+    post:
+      tags: [Admin]
+      summary: 画像アップロード
+      operationId: uploadImage
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '415':
+          description: 非対応 Content-Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: JPEGまたはPNG画像を選択してください
+        '503':
+          description: R2 未バインド
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/images/{roomId}/{objectName}:
+    delete:
+      tags: [Admin]
+      summary: 画像削除
+      operationId: deleteImage
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+        - $ref: '#/components/parameters/ObjectName'
+      responses:
+        '204':
+          description: 削除成功（対象なしでも 204）
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/audio/{roomId}:
+    post:
+      tags: [Admin]
+      summary: 音声アップロード
+      description: |
+        MP3 音声を R2 の `audio/{roomId}/{uuid}.mp3` に保存する。
+        最大 20MB。multipart/form-data ではなく生バイナリを POST する。
+      operationId: uploadAudio
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+        - name: X-Audio-Filename
+          in: header
+          required: false
+          schema:
+            type: string
+          description: 表示用ファイル名（省略時は `audio.mp3`）
+      requestBody:
+        required: true
+        content:
+          audio/mpeg:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: アップロード成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudioUploadResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: 20MB 超過
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 音声ファイルは20MB以下にしてください
+        '415':
+          description: MP3 以外
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: MP3ファイルを選択してください
+        '503':
+          description: R2 未バインド
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/admin/audio/{roomId}/{objectName}:
+    get:
+      tags: [Admin]
+      summary: 音声取得
+      description: |
+        管理者画面からの再生用。HTTP Range Request に対応し、
+        必要に応じて `206 Partial Content` を返す。
+      operationId: getAudio
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+        - $ref: '#/components/parameters/ObjectName'
+        - name: Range
+          in: header
+          required: false
+          schema:
+            type: string
+          example: bytes=0-1023
+      responses:
+        '200':
+          description: 全内容
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Accept-Ranges:
+              schema:
+                type: string
+              example: bytes
+        '206':
+          description: 部分内容（Range Request）
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Range:
+              schema:
+                type: string
+              example: bytes 0-1023/2048
+            Accept-Ranges:
+              schema:
+                type: string
+              example: bytes
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: 音声が見つからない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 音声が見つかりません
+    delete:
+      tags: [Admin]
+      summary: 音声削除
+      operationId: deleteAudio
+      security:
+        - CloudflareAccess: []
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+        - $ref: '#/components/parameters/ObjectName'
+      responses:
+        '204':
+          description: 削除成功（対象なしでも 204）
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /slides/{roomId}/{objectName}:
+    get:
+      tags: [Assets]
+      summary: R2 画像配信
+      description: Worker が R2 から画像を配信する。存在しない場合は静的アセットへフォールバック。
+      operationId: getSlideImage
+      parameters:
+        - $ref: '#/components/parameters/RoomIdPath'
+        - $ref: '#/components/parameters/ObjectName'
+      responses:
+        '200':
+          description: 画像本体
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+
+components:
+  securitySchemes:
+    CloudflareAccess:
+      type: apiKey
+      in: header
+      name: Cf-Access-Authenticated-User-Email
+      description: Cloudflare Access が付与する認証済みメールアドレス
+
+  parameters:
+    Author:
+      name: author
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._~-]+$'
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._~-]+$'
+    RoomIdPath:
+      name: roomId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._~-]+$'
+    ObjectName:
+      name: objectName
+      in: path
+      required: true
+      schema:
+        type: string
+      description: R2 オブジェクト名（例: `{uuid}.mp3`）
+
+  responses:
+    NotFound:
+      description: リソースが見つからない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Not Found
+    Forbidden:
+      description: 認可失敗
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: アクセス権限がありません
+    BadRequest:
+      description: 入力不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: 入力内容が不正です
+    Conflict:
+      description: roomId 重複
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: このルームIDは既に使用されています
+    RoomNotFound:
+      description: ルーム不存在または管理権限なし
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: ルームが見つかりません
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    HealthResponse:
+      type: object
+      required: [status, d1, r2]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        d1:
+          type: string
+          enum: [connected]
+        r2:
+          type: string
+          enum: [connected, unconfigured]
+
+    HealthErrorResponse:
+      type: object
+      required: [status, d1]
+      properties:
+        status:
+          type: string
+          enum: [error]
+        d1:
+          type: string
+          enum: [unavailable]
+
+    AdminSession:
+      type: object
+      required: [email, systemAdmin]
+      properties:
+        email:
+          type: string
+          format: email
+        systemAdmin:
+          type: boolean
+
+    AdminRoomSummary:
+      type: object
+      required: [author, roomId, title, updatedAt]
+      properties:
+        author:
+          type: string
+        roomId:
+          type: string
+        title:
+          type: string
+        updatedAt:
+          type: string
+          description: SQLite CURRENT_TIMESTAMP（UTC）
+
+    RoomIdResponse:
+      type: object
+      required: [roomId]
+      properties:
+        roomId:
+          type: string
+
+    ImageUploadResponse:
+      type: object
+      required: [imageUrl]
+      properties:
+        imageUrl:
+          type: string
+          example: /slides/event-room-01/550e8400-e29b-41d4-a716-446655440000.png
+
+    AudioUploadResponse:
+      type: object
+      required: [audioUrl, name]
+      properties:
+        audioUrl:
+          type: string
+          example: /api/admin/audio/event-room-01/550e8400-e29b-41d4-a716-446655440000.mp3
+        name:
+          type: string
+          example: question-01.mp3
+
+    QuestionAudio:
+      type: object
+      required: [url, name]
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+
+    Choice:
+      type: object
+      required: [id, label, text]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        text:
+          type: string
+
+    Question:
+      type: object
+      required: [id, type, text, choices, timeLimitSeconds]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [single, multiple]
+        text:
+          type: string
+        audio:
+          $ref: '#/components/schemas/QuestionAudio'
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        correctChoiceId:
+          type: string
+        correctChoiceIds:
+          type: array
+          items:
+            type: string
+        timeLimitSeconds:
+          type: integer
+          minimum: 1
+
+    PublicQuestion:
+      allOf:
+        - $ref: '#/components/schemas/Question'
+        - type: object
+          properties:
+            audio: false
+
+    Slide:
+      type: object
+      required: [id, type, title, imageUrl]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [slide, question, answer, result]
+        title:
+          type: string
+        imageUrl:
+          type: string
+        questionId:
+          type: string
+
+    RoomConfig:
+      type: object
+      required: [author, roomId, title, winnerLastRank, initialSlideIndex, slides, questions]
+      properties:
+        author:
+          type: string
+          pattern: '^[A-Za-z0-9._~-]+$'
+        roomId:
+          type: string
+          pattern: '^[A-Za-z0-9._~-]+$'
+        title:
+          type: string
+        description:
+          type: string
+        winnerLastRank:
+          type: integer
+          minimum: 1
+          maximum: 10
+        initialSlideIndex:
+          type: integer
+        slides:
+          type: array
+          items:
+            $ref: '#/components/schemas/Slide'
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Question'
+
+    PublicRoomConfig:
+      allOf:
+        - $ref: '#/components/schemas/RoomConfig'
+        - type: object
+          properties:
+            questions:
+              type: array
+              items:
+                $ref: '#/components/schemas/PublicQuestion'
+
+    RoomUpsertRequest:
+      type: object
+      required: [room]
+      properties:
+        room:
+          $ref: '#/components/schemas/RoomConfig'
+        changes:
+          type: array
+          description: 画面から送信されるが現行 API では保存・処理しない
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              contentId:
+                type: string
+              changedAt:
+                type: string
+                format: date-time

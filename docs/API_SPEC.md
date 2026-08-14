@@ -1,5 +1,7 @@
 # API仕様書
 
+OpenAPI 3.1 形式の機械可読仕様は [openapi.yaml](./openapi.yaml) を参照してください。
+
 ## 1. 共通仕様
 
 - 本番ベースURL: `https://quiz-streaming-app.kokage-studio.com`
@@ -86,6 +88,7 @@ APIのサーバー側バリデーションはルーム全体の詳細構造を�
 | `id` | string | 必須 | 問題識別子 |
 | `type` | string | 必須 | `single` または `multiple` |
 | `text` | string | 必須 | 問題文 |
+| `audio` | object | 任意 | 管理者専用音声。`url`, `name` を保持 |
 | `choices` | Choice[] | 必須 | 管理画面では2～6件 |
 | `correctChoiceId` | string | 条件付き | 単一選択との後方互換用 |
 | `correctChoiceIds` | string[] | 条件付き | 複数正解を含む正解ID群 |
@@ -104,6 +107,9 @@ APIのサーバー側バリデーションはルーム全体の詳細構造を�
 | PATCH | `/api/admin/rooms/:roomId` | 必要 | ルーム更新・ID変更 |
 | POST | `/api/admin/images/:roomId` | 必要 | 画像アップロード |
 | DELETE | `/api/admin/images/:roomId/:objectName` | 必要 | 画像削除 |
+| POST | `/api/admin/audio/:roomId` | 必要 | 音声アップロード |
+| GET | `/api/admin/audio/:roomId/:objectName` | 必要 | 音声取得（Range Request対応） |
+| DELETE | `/api/admin/audio/:roomId/:objectName` | 必要 | 音声削除 |
 
 ## 5. GET /api/health
 
@@ -143,7 +149,7 @@ R2が未バインドの場合、`r2` は `unconfigured`。
 
 ### 成功 200
 
-レスポンスは `RoomConfig`。
+レスポンスは `RoomConfig`。参加者向け公開 API では `questions[].audio` を除外する。
 
 ### 失敗 404
 
@@ -307,7 +313,75 @@ R2の `slides/{roomId}/{objectName}` を削除する。
 
 `objectName` は1つ以上のパス要素を受け付け、APIはルーム所有権・参照整合性を検査しない。
 
-## 14. R2画像配信 GET /slides/*
+## 14. POST /api/admin/audio/:roomId
+
+音声本体をリクエストボディとしてR2へ保存する。multipart/form-dataではない。
+
+### リクエスト例
+
+```http
+POST /api/admin/audio/event-room-01
+Content-Type: audio/mpeg
+X-Audio-Filename: question-01.mp3
+
+<binary>
+```
+
+### オブジェクトキー
+
+`audio/{roomId}/{UUID}.mp3`
+
+### 制約
+
+- Content-Type: `audio/mpeg` のみ
+- 最大 20MB（`Content-Length` で検証）
+
+### 成功 201
+
+```json
+{
+  "audioUrl": "/api/admin/audio/event-room-01/550e8400-e29b-41d4-a716-446655440000.mp3",
+  "name": "question-01.mp3"
+}
+```
+
+### エラー
+
+| HTTP | 条件 | 本文 |
+|---|---|---|
+| 403 | 認可失敗 | `アクセス権限がありません` |
+| 413 | 20MB超過 | `音声ファイルは20MB以下にしてください` |
+| 415 | MP3以外 | `MP3ファイルを選択してください` |
+| 503 | R2未バインド | `R2がまだ有効化されていません` |
+
+## 15. GET /api/admin/audio/:roomId/:objectName
+
+管理者画面から音声を再生する。Cloudflare Access保護対象。
+
+### Range Request
+
+`Range` ヘッダーをR2取得時に反映し、必要に応じて `206 Partial Content` を返す。
+
+### 成功 200 / 206
+
+`audio/mpeg` バイナリ。`Accept-Ranges: bytes` を付与。
+
+### エラー
+
+| HTTP | 条件 | 本文 |
+|---|---|---|
+| 403 | 認可失敗 | `アクセス権限がありません` |
+| 404 | 対象なし | `音声が見つかりません` |
+
+## 16. DELETE /api/admin/audio/:roomId/:objectName
+
+R2の `audio/{roomId}/{objectName}` を削除する。
+
+### 成功 204
+
+本文なし。対象が存在しない場合も204になる。
+
+## 17. R2画像配信 GET /slides/*
 
 APIではないがWorkerが動的に処理する。
 
@@ -317,7 +391,7 @@ APIではないがWorkerが動的に処理する。
 
 既定キャッシュは `public, max-age=3600`。
 
-## 15. 共通エラー
+## 18. 共通エラー
 
 未定義の管理APIは次を返す。
 
