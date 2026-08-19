@@ -1,4 +1,4 @@
-import { computed, onBeforeUnmount, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, onBeforeUnmount, ref, toRaw, watch, type ComputedRef, type Ref } from 'vue'
 import { QUIZ_EDITOR_LIMITS, isValidRoomIdentifier } from '#shared/constants/quiz'
 import type { RoomChange, RoomConfig } from '#shared/types/quiz'
 import { createEmptyRoomConfig, normalizeRoomConfig } from '#shared/utils/roomConfig'
@@ -55,36 +55,43 @@ export function useRoomEditorPersistence(options: PersistenceOptions) {
     if (!options.canSave.value || saving.value) return
     saving.value = true
     saveError.value = ''
-    const submittedChanges = [...options.changes.value]
-    const submittedRoom = normalizeRoomConfig(options.room)
-    const endpoint = adminRoomApiPath(create ? undefined : originalRoomId.value)
-    let lastError: unknown
 
-    for (let attempt = 0; attempt < QUIZ_EDITOR_LIMITS.saveAttempts; attempt += 1) {
-      try {
-        const result = await $fetch<{ roomId: string }>(endpoint, {
-          method: create ? 'POST' : 'PATCH',
-          body: { room: submittedRoom, changes: submittedChanges },
-        })
-        originalRoomId.value = result.roomId
-        loadedRoomId.value = result.roomId
-        savedOnce.value = true
-        const submitted = new Set(submittedChanges.map(changeKey))
-        options.changes.value = options.changes.value.filter(change => !submitted.has(changeKey(change)))
-        showMessage('ルームを保存しました')
-        await router.replace({ path: '/admin/edit', query: { q: result.roomId } })
-        await options.afterSave?.()
-        saving.value = false
-        scheduleAutosave()
-        return
+    try {
+      const submittedChanges = [...options.changes.value]
+      const submittedRoom = normalizeRoomConfig(toRaw(options.room))
+      const endpoint = adminRoomApiPath(create ? undefined : originalRoomId.value)
+      let lastError: unknown
+
+      for (let attempt = 0; attempt < QUIZ_EDITOR_LIMITS.saveAttempts; attempt += 1) {
+        try {
+          const result = await $fetch<{ roomId: string }>(endpoint, {
+            method: create ? 'POST' : 'PATCH',
+            body: { room: submittedRoom, changes: submittedChanges },
+          })
+          originalRoomId.value = result.roomId
+          loadedRoomId.value = result.roomId
+          savedOnce.value = true
+          const submitted = new Set(submittedChanges.map(changeKey))
+          options.changes.value = options.changes.value.filter(change => !submitted.has(changeKey(change)))
+          showMessage('ルームを保存しました')
+          await router.replace({ path: '/admin/edit', query: { q: result.roomId } })
+          await options.afterSave?.()
+          scheduleAutosave()
+          return
+        }
+        catch (error) {
+          lastError = error
+        }
       }
-      catch (error) {
-        lastError = error
-      }
+
+      saveError.value = apiErrorMessage(lastError, '保存に失敗しました。しばらくしてもう一度保存してください')
     }
-
-    saveError.value = apiErrorMessage(lastError, '保存に失敗しました。しばらくしてもう一度保存してください')
-    saving.value = false
+    catch (error) {
+      saveError.value = apiErrorMessage(error, '保存処理に失敗しました')
+    }
+    finally {
+      saving.value = false
+    }
   }
 
   function scheduleAutosave() {
