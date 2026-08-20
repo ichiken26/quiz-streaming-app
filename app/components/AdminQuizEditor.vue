@@ -4,7 +4,7 @@ import { QUIZ_EDITOR_LIMITS } from '#shared/constants/quiz'
 import type { Choice, Question, QuestionType, Slide } from '#shared/types/quiz'
 import { getCorrectChoiceIds } from '#shared/utils/quizScoring'
 
-defineProps<{
+const props = defineProps<{
   slide: Slide
   question: Question
   questionLabel: string
@@ -29,6 +29,16 @@ defineEmits<{
 }>()
 
 const previewAudioRef = ref<HTMLAudioElement>()
+const questionTextValid = computed(() => Boolean(props.question.text.trim()))
+const choicesValid = computed(() => (
+  props.question.choices.length >= QUIZ_EDITOR_LIMITS.minChoices
+  && props.question.choices.every(choice => Boolean(choice.text.trim()))
+))
+const answerValid = computed(() => {
+  const answers = getCorrectChoiceIds(props.question)
+  return props.question.type === 'single' ? answers.length === 1 : answers.length >= 1
+})
+const timeLimitValid = computed(() => props.question.timeLimitSeconds > 0)
 </script>
 
 <template>
@@ -62,15 +72,23 @@ const previewAudioRef = ref<HTMLAudioElement>()
         </button>
       </div>
     </div>
-    <label>問題 <b>必須</b>
+    <label>
+      <span class="field-label-row">
+        <span>問題 <b>必須</b></span>
+        <em v-if="!questionTextValid" class="field-required-error">入力してください</em>
+      </span>
       <textarea
         :value="question.text"
         rows="2"
+        :aria-invalid="!questionTextValid"
         @input="$emit('updateText', ($event.target as HTMLTextAreaElement).value)"
       />
     </label>
-    <fieldset class="choice-editor">
+    <fieldset class="choice-editor" :class="{ 'field-invalid': !choicesValid || !answerValid }">
       <legend>選択肢と解答 <b>必須</b></legend>
+      <div v-if="!choicesValid || !answerValid" class="field-required-error choice-editor__error">
+        入力してください
+      </div>
       <div v-for="choice in question.choices" :key="choice.id" class="choice-editor__row">
         <input
           :type="question.type === 'single' ? 'radio' : 'checkbox'"
@@ -84,6 +102,7 @@ const previewAudioRef = ref<HTMLAudioElement>()
           :value="choice.text"
           :placeholder="`選択肢 ${choice.label}`"
           :aria-label="`選択肢 ${choice.label}`"
+          :aria-invalid="!choice.text.trim()"
           @focus="$emit('focusChoice', choice.id)"
           @blur="$emit('blurChoice', choice)"
           @input="$emit('updateChoice', choice, ($event.target as HTMLInputElement).value)"
@@ -92,7 +111,7 @@ const previewAudioRef = ref<HTMLAudioElement>()
           class="choice-editor__delete"
           type="button"
           :disabled="question.choices.length <= QUIZ_EDITOR_LIMITS.minChoices"
-          :aria-label="`選択肢 ${choice.label}を削除`"
+          :aria-label="`${choice.label}を削除`"
           :title="question.choices.length <= QUIZ_EDITOR_LIMITS.minChoices ? '選択肢は2件以上必要です' : `選択肢 ${choice.label}を削除`"
           @click="$emit('removeChoice', choice.id)"
         >
@@ -108,12 +127,17 @@ const previewAudioRef = ref<HTMLAudioElement>()
         @click="$emit('addChoice')"
       >選択肢を追加（最大{{ QUIZ_EDITOR_LIMITS.maxChoices }}件）</button>
     </fieldset>
-    <label class="time-limit">制限時間 <b>必須</b>
+    <label class="time-limit">
+      <span class="field-label-row">
+        <span>制限時間 <b>必須</b></span>
+        <em v-if="!timeLimitValid" class="field-required-error">入力してください</em>
+      </span>
       <span>
         <input
           :value="question.timeLimitSeconds"
           type="number"
           min="1"
+          :aria-invalid="!timeLimitValid"
           @input="$emit('updateTimeLimit', Number(($event.target as HTMLInputElement).value))"
         > 秒
       </span>
