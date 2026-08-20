@@ -3,7 +3,7 @@ import { QUIZ_EDITOR_LIMITS, isValidRoomIdentifier } from '#shared/constants/qui
 import type { RoomChange, RoomConfig } from '#shared/types/quiz'
 import { createEmptyRoomConfig, normalizeRoomConfig } from '#shared/utils/roomConfig'
 import { adminRoomApiPath } from '#shared/utils/roomRoutes'
-import { apiErrorMessage } from '~/utils/apiError'
+import { apiErrorDisplayMessage, apiErrorMessage } from '~/utils/apiError'
 
 type PersistenceOptions = {
   room: RoomConfig
@@ -43,17 +43,30 @@ export function useRoomEditorPersistence(options: PersistenceOptions) {
     saved: '保存済',
   })[saveState.value])
 
-  function showMessage(message: string) {
-    saveMessage.value = message
+  function clearMessageLater() {
     clearTimeout(messageTimer)
     messageTimer = setTimeout(() => {
       saveMessage.value = ''
+      saveError.value = ''
     }, QUIZ_EDITOR_LIMITS.saveMessageDurationMs)
+  }
+
+  function showMessage(message: string) {
+    saveError.value = ''
+    saveMessage.value = message
+    clearMessageLater()
+  }
+
+  function showSaveError(message: string) {
+    saveMessage.value = ''
+    saveError.value = message
+    clearMessageLater()
   }
 
   async function persist(create = false) {
     if (!options.canSave.value || saving.value) return
     saving.value = true
+    saveMessage.value = ''
     saveError.value = ''
 
     try {
@@ -84,10 +97,10 @@ export function useRoomEditorPersistence(options: PersistenceOptions) {
         }
       }
 
-      saveError.value = apiErrorMessage(lastError, '保存に失敗しました。しばらくしてもう一度保存してください')
+      showSaveError(apiErrorDisplayMessage(lastError, '保存に失敗しました。しばらくしてもう一度保存してください'))
     }
     catch (error) {
-      saveError.value = apiErrorMessage(error, '保存処理に失敗しました')
+      showSaveError(apiErrorDisplayMessage(error, '保存処理に失敗しました'))
     }
     finally {
       saving.value = false
@@ -173,6 +186,7 @@ export function useRoomEditorPersistence(options: PersistenceOptions) {
     saveState,
     saveStateLabel,
     showMessage,
+    showSaveError,
     saveNow,
     start,
   }
