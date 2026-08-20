@@ -74,6 +74,7 @@ function updateTimeLimit(question: Question, seconds: number) {
         v-for="(slide, index) in room.slides"
         :key="slide.id"
         class="editor-content"
+        :class="{ 'editor-content--invalid': slide.type !== 'question' && !slide.imageUrl }"
         draggable="true"
         @dragstart="$emit('dragStart', index)"
         @dragover.prevent
@@ -89,8 +90,15 @@ function updateTimeLimit(question: Question, seconds: number) {
         <span class="drag-handle" title="ドラッグして並び替え">⠿</span>
 
         <div v-if="slide.type !== 'question'" class="image-content">
-          <img :src="slide.imageUrl" :alt="slide.title">
-          <label>画像タイトル
+          <div class="image-content__preview">
+            <img v-if="slide.imageUrl" :src="slide.imageUrl" :alt="slide.title">
+            <div v-else class="image-content__missing">画像がありません</div>
+          </div>
+          <label>
+            <span class="field-label-row">
+              <span>画像タイトル</span>
+              <em v-if="!slide.imageUrl" class="field-required-error">入力してください</em>
+            </span>
             <input
               :value="slide.title"
               @input="$emit('updateSlideTitle', slide, ($event.target as HTMLInputElement).value)"
