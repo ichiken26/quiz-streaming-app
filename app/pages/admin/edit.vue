@@ -36,6 +36,8 @@ const {
   closeContextMenu,
 } = editor
 
+const titleValid = computed(() => Boolean(room.title.trim()))
+
 let refreshShare = async () => {}
 const persistence = useRoomEditorPersistence({
   room,
@@ -56,6 +58,7 @@ const {
   saveState,
   saveStateLabel,
   showMessage,
+  showSaveError,
   saveNow,
   start: startPersistence,
 } = persistence
@@ -75,7 +78,7 @@ const media = useRoomEditorMedia(room, {
   insertSlide,
   markChanged,
   closeContextMenu,
-  setError: message => { saveError.value = message },
+  setError: showSaveError,
 })
 const {
   fileInput,
@@ -91,7 +94,7 @@ const {
 
 const audio = useRoomEditorAudio(room, {
   markChanged,
-  setError: message => { saveError.value = message },
+  setError: showSaveError,
 })
 const {
   audioInput,
@@ -192,7 +195,11 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
           <small>{{ session?.email }}</small>
         </div>
         <div class="save-area">
-          <p v-if="saveMessage" class="save-toast" role="status">{{ saveMessage }}</p>
+          <AdminSaveNotice
+            v-if="saveError || saveMessage"
+            :message="saveError || saveMessage"
+            :tone="saveError ? 'error' : 'success'"
+          />
           <span class="save-state" :class="`save-state--${saveState}`" role="status">
             {{ saveStateLabel }}
           </span>
@@ -205,8 +212,6 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
         </div>
       </header>
 
-      <p v-if="saveError" class="notice notice--danger" role="alert">{{ saveError }}</p>
-
       <AdminRoomFields
         :author="room.author"
         :room-id="room.roomId"
@@ -214,6 +219,7 @@ useHead({ title: computed(() => `${savedOnce.value ? 'ルーム編集' : 'ルー
         :winner-last-rank="room.winnerLastRank"
         :author-valid="authorValid"
         :room-id-valid="roomIdValid"
+        :title-valid="titleValid"
         @update:author="updateRoomField('author', $event)"
         @update:room-id="updateRoomField('roomId', $event)"
         @update:title="updateRoomField('title', $event)"
