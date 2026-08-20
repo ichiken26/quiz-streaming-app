@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     './layers/realtime',
   ],
   devtools: { enabled: true },
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', '~/assets/css/admin-validation.css'],
   vite: {
     server: {
       proxy: {
